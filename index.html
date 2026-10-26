@@ -582,6 +582,10 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 #player-screen .pl-actions{gap:calc(24*var(--u))!important}
 #player-screen .pl-tile{flex-basis:calc(78*var(--u)*var(--sv-player-ui-scale,1))!important;height:calc(46*var(--u)*var(--sv-player-ui-scale,1))!important;font-size:calc(11*var(--u)*var(--sv-player-ui-scale,1))!important;border-radius:calc(11*var(--u))!important}
 #player-screen.portrait .pl-tile{flex:0 0 calc((100% - 16*var(--u)) / 3)!important;height:calc(56*var(--u))!important}
+#inlineVideo.ratio-auto,#player-screen.ratio-auto .pl-video video{object-fit:contain!important}
+#inlineVideo.ratio-auto.sv-autofill,#player-screen.ratio-auto .pl-video video.sv-autofill{object-fit:cover!important}
+/* TV browsers: clear focus highlight instead of the thin default box */
+#player-screen button:focus-visible,#player-screen .pl-tile:focus-visible{outline:3px solid #ffd54a!important;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -715,7 +719,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             <div class="display-setting-card">
                 <div class="display-setting-title">📐 Screen Ratio</div>
                 <div class="display-options" id="screenRatioOptions">
-                    <button class="display-option active" data-value="fit">Fit</button>
+                    <button class="display-option active" data-value="auto">Auto</button>
+                    <button class="display-option" data-value="fit">Fit</button>
                     <button class="display-option" data-value="full">Full</button>
                     <button class="display-option" data-value="stretch">Stretch</button>
                     <button class="display-option" data-value="169">16:9</button>
@@ -824,6 +829,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                         <button class="pl-act" id="plPipBtn" aria-label="Picture in picture"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></button>
                         <button class="pl-act" id="plLockBtn" aria-label="Lock controls"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></button>
                         <button class="pl-act pl-record-btn" id="plRecordBtn" aria-label="Record"><span>●</span></button>
+                        <button class="pl-act" id="svRatioBtn" aria-label="Screen size" title="Screen size (Auto / Full / Fit / Stretch)"><svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v4h-4v2h6v-6z" transform="translate(0 0)"/></svg></button>
                         <button class="pl-act" id="playerSettingsBtn" aria-label="Quality"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
                         <button class="pl-act" id="plExitBtn" aria-label="Exit full screen"><svg viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
                     </div>
@@ -1769,7 +1775,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 else if (!nativeOnly && !canNativeHls) modes.push({ label: 'direct', kind: 'direct' });
             }
             // Proxy routes are a last resort; public CORS proxies need HLS.js/MSE and may not work on iOS Safari.
-            getProxyModes().forEach(m => modes.push(m));
+            const px = getProxyModes();
+            if (localStorage.getItem('sv_proxy_first') === '1' && px[0] && px[0].kind === 'rewrite') px.forEach(m => modes.unshift(m));
+            else px.forEach(m => modes.push(m));
             return modes;
         }
 
@@ -2510,7 +2518,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         const profileBtn = document.getElementById('profileBtn');
         const settingsPage = document.getElementById('settingsPage');
         const backBtn = document.getElementById('backBtn');
-        profileBtn.addEventListener('click', () => { settingsPage.style.display = 'flex'; });
+        profileBtn.addEventListener('click', () => { if (window.svOpenSettings) window.svOpenSettings(); else { const p = prompt('Settings password (DDMM)'); const d = new Date(); const t = String(d.getDate()).padStart(2,'0') + String(d.getMonth()+1).padStart(2,'0'); if (p === t) settingsPage.style.display = 'flex'; } });
         backBtn.addEventListener('click', () => { settingsPage.style.display = 'none'; });
 
         document.querySelectorAll('.retry-btn').forEach(btn => { if (btn.id === 'inlineRetryBtn') return; btn.addEventListener('click', e => { e.stopPropagation(); if (currentStreamUrl) initInlineVideo(currentStreamUrl); else if (localStorage.getItem(CACHE_KEY_URL)) loadIPTV(localStorage.getItem(CACHE_KEY_URL), true); else loadIPTV(DEFAULT_URL, true); }); });
@@ -2708,7 +2716,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         const defaultDisplaySettings = {
             rotate: 'auto',
             quality: 'standard',
-            ratio: 'fit',
+            ratio: 'auto',
             atmos: false,
             appFontScale: 100,
             appLayoutScale: 100,
@@ -2734,11 +2742,11 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             const r = displaySettings.ratio;
 
             inlineVideo.classList.remove('display-standard','display-vivid','display-cinema',
-                                         'ratio-fit','ratio-full','ratio-stretch','ratio-169','ratio-43');
+                                         'ratio-auto','ratio-fit','ratio-full','ratio-stretch','ratio-169','ratio-43');
             inlineVideo.classList.add('display-' + q, 'ratio-' + r);
 
             playerScreen.classList.remove('display-standard','display-vivid','display-cinema',
-                                          'ratio-fit','ratio-full','ratio-stretch','ratio-169','ratio-43');
+                                          'ratio-auto','ratio-fit','ratio-full','ratio-stretch','ratio-169','ratio-43');
             playerScreen.classList.add('display-' + q, 'ratio-' + r);
 
             dolbyAtmosToggle.checked = !!displaySettings.atmos;
@@ -2821,6 +2829,42 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         function refreshDisplayClasses() {
             applyDisplaySettings();
         }
+
+        // ---- Auto fit: video that nearly matches the screen shape fills it; others keep their real shape (no distortion) ----
+        function svAutoFit() {
+            if (displaySettings.ratio !== 'auto') { inlineVideo.classList.remove('sv-autofill'); return; }
+            const vw = inlineVideo.videoWidth, vh = inlineVideo.videoHeight, bw = inlineVideo.clientWidth, bh = inlineVideo.clientHeight;
+            if (!vw || !vh || !bw || !bh) return;
+            const r = (vw / vh) / (bw / bh);
+            inlineVideo.classList.toggle('sv-autofill', r > 0.88 && r < 1.14);
+        }
+        const svAutoFitSoon = () => { setTimeout(svAutoFit, 80); setTimeout(svAutoFit, 500); };
+        ['loadedmetadata', 'resize', 'playing'].forEach(ev => inlineVideo.addEventListener(ev, svAutoFitSoon));
+        window.addEventListener('resize', svAutoFitSoon);
+        ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, svAutoFitSoon));
+        { const _ads = applyDisplaySettings; applyDisplaySettings = function () { _ads.apply(this, arguments); svAutoFit(); svAutoFitSoon(); }; }
+
+        function svRatioToast(t) {
+            let el = document.getElementById('svRatioToast');
+            if (!el) {
+                el = document.createElement('div'); el.id = 'svRatioToast';
+                el.style.cssText = 'position:absolute;top:14%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 18px;border-radius:12px;font:700 18px system-ui;z-index:60;pointer-events:none;display:none';
+                playerScreen.appendChild(el);
+            }
+            el.textContent = t; el.style.display = 'block';
+            clearTimeout(el._t); el._t = setTimeout(() => { el.style.display = 'none'; }, 1500);
+        }
+        const RATIO_CYCLE = [['auto', 'Auto fit'], ['full', 'Full (zoom)'], ['fit', 'Fit (original)'], ['stretch', 'Stretch']];
+        document.getElementById('svRatioBtn')?.addEventListener('click', e => {
+            e.stopPropagation();
+            const i = RATIO_CYCLE.findIndex(x => x[0] === displaySettings.ratio);
+            const next = RATIO_CYCLE[(i + 1) % RATIO_CYCLE.length];
+            displaySettings.ratio = next[0];
+            setOptionGroup('screenRatioOptions', next[0]);
+            try { localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(displaySettings)); } catch (_) {}
+            applyDisplaySettings();
+            svRatioToast('Screen: ' + next[1]);
+        });
 
         // ================= BOTTOM NAV =================
         const bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
@@ -3287,9 +3331,16 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 <h3>Category merge</h3>
 <label><input type="checkbox" id="svAutoMerge">Duplicate category names auto merge (Movie / MOVIES / Movies HD → Movies)</label>
 <div id="svDupes"></div><button id="svMergeAll">Merge all duplicates</button>
-<p>Manual merge: Original category ko dusre folder mein merge karein.</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="svMergeFrom" list="svCategoryOptions" placeholder="Original category"><datalist id="svCategoryOptions"></datalist><input id="svMergeTo" list="svCategoryOptions" placeholder="Folder name (Movies)"><button id="svMergeAdd">Add merge</button></div>
+<h3>Saari categories (IPTV ki default)</h3>
+<p>Jitni categories merge karni hain unhe tick karein, neeche folder ka naam likhein aur <b>Merge selected</b> dabayein.</p>
+<input id="svCatFilter" placeholder="Category search karein..." style="width:100%;box-sizing:border-box">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="svSelAll" class="sv-grey">Select all (jo dikh rahi)</button><button id="svSelNone" class="sv-grey">Clear</button><span id="svSelCount" style="align-self:center;color:#687386"></span></div>
+<div id="svAllCats" style="display:grid;gap:6px;max-height:340px;overflow:auto;padding:4px;border:1px solid #e1e6ee;border-radius:12px;background:#fff"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><input id="svSelTo" list="svCategoryOptions" placeholder="Folder name (jaise Movies)" style="flex:1;min-width:180px"><button id="svSelMerge">Merge selected</button></div>
+<h3>Merged folders</h3>
 <div id="svMergeRows" style="display:grid;gap:8px;margin:12px 0"></div>
+<p>Ya ek-ek karke (advanced): Original category ko dusre folder mein merge karein.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="svMergeFrom" list="svCategoryOptions" placeholder="Original category"><datalist id="svCategoryOptions"></datalist><input id="svMergeTo" list="svCategoryOptions" placeholder="Folder name (Movies)"><button id="svMergeAdd">Add merge</button></div>
 <details id="svManualBox" style="margin:10px 0"><summary><b>Manual number (advanced)</b></summary><p>Kisi channel ko apna number dena ho to yahan likhein.</p><input id="svMapSearch" placeholder="Channel search karein..." style="width:100%;box-sizing:border-box"><div id="svMapRows"></div></details>
 <button id="svMapSave">Save settings</button><p id="svMapStatus" aria-live="polite"></p></div><div id="svNumToast"></div>
 <script>
@@ -3334,6 +3385,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   });
   // Channels that failed Auto-Tune (not found / http-blocked / network error / unsupported) are hidden.
   const BAD=new Set(['unavailable','mixed','network','invalid','unsupported']);if(cfg.strict)BAD.add('unverified');
+  try{if(localStorage.getItem('iptv_proxy'))BAD.delete('mixed')}catch(e){}
   const stt=window.svChannelStatus||{};
   list.forEach(c=>{c.svHide=!!(cfg.onlyOk&&BAD.has(stt[chKey(c)]))});
   if(list.length&&list.every(c=>c.svHide))list.forEach(c=>{c.svHide=false}); // never leave the dashboard empty
@@ -3345,7 +3397,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   groups.forEach(mem=>{const vis=mem.filter(c=>!c.svHide);if(!vis.length)return;const v=vis.map(c=>c.svNum).filter(Boolean);stats.push({name:mem[0].svCat,count:vis.length,min:v.length?v.reduce((a,b)=>Math.min(a,b)):0,max:v.length?v.reduce((a,b)=>Math.max(a,b)):0})});
   stats.sort((a,b)=>(a.min-b.min)||(b.count-a.count));
   window.svHidden=list.filter(c=>c.svHide).length;window.svTotal=list.length-window.svHidden;
-  window.svCatStats=stats;window.svDupes=dupes;window.svRawCats=[...new Set(rows.map(r=>r.base))].sort();
+  window.svCatStats=stats;window.svDupes=dupes;window.svRawCats=[...new Set(rows.map(r=>r.base))].sort((a,b)=>a.localeCompare(b));
+  const rc=new Map();rows.forEach(r=>rc.set(r.base,(rc.get(r.base)||0)+1));window.svRawCatCounts=rc;
  }
  // Run before the app builds its category chips (playlist load and cached start).
  const origBuild=window.buildAutoFilters;
@@ -3355,6 +3408,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   if(window.svCatStats&&window.svCatStats.length){try{filterCategories=window.svCatStats.map(s=>s.name).sort((a,b)=>a.localeCompare(b));renderAutoFilterChips()}catch(e){}}
  }
  window.buildAutoFilters=build;
+ window.svRefresh=()=>refresh();
+ window.svReloadMapCfg=()=>{nums=load(NUMKEY,{});merges=load(MERGEKEY,{});cfg=load(CFGKEY,{autoNum:true,autoMerge:true,onlyOk:true,strict:false});refresh()};
  function refresh(){
   const list=allCh();
   if(list.length){build(list);try{const lc=$('channelListContainer'),top=lc?lc.scrollTop:0;renderChannels(applyFilters(list));if(lc)lc.scrollTop=top}catch(e){}}
@@ -3369,8 +3424,20 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   $('svDupes').innerHTML=dp.map((d,i)=>`<div class="sv-card"><span><b>${esc(d.label)}</b> ← ${esc(d.variants.filter(v=>v!==d.label).join(', '))}</span>${merged(d)?'<small>✓ Merged</small>':`<button data-mg="${i}">Merge</button>`}</div>`).join('')||'<small>Koi duplicate category name nahi mila ✓</small>';
   $('svMergeAll').style.display=dp.some(d=>!merged(d))?'':'none';
   $('svCategoryOptions').innerHTML=(window.svRawCats||[]).map(v=>`<option value="${esc(v)}">`).join('');
-  $('svMergeRows').innerHTML=Object.entries(merges).map(([from,to])=>`<div class="sv-card"><span>${esc(from)} → <b>${esc(to)}</b></span><button data-delmerge="${esc(from)}">Remove</button></div>`).join('')||'<small>No manual merge rules yet.</small>';
+  const byTo={};Object.entries(merges).forEach(([from,to])=>{(byTo[to]=byTo[to]||[]).push(from)});
+  $('svMergeRows').innerHTML=Object.entries(byTo).map(([to,fr])=>`<div class="sv-card" style="display:block"><b>📁 ${esc(to)}</b> <small>(${fr.length} categories)</small><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${fr.map(f=>`<button class="sv-grey" style="padding:6px 10px;font-weight:600" data-delmerge="${esc(f)}" title="Is category ko folder se alag karein">${esc(f)} ✕</button>`).join('')}</div></div>`).join('')||'<small>Abhi koi merge folder nahi hai.</small>';
+  renderAllCats();
  }
+ const sel=new Set();
+ function renderAllCats(){
+  const box=$('svAllCats');if(!box)return;
+  const q=clean($('svCatFilter').value),cnt=window.svRawCatCounts||new Map();
+  const man=new Map(Object.entries(merges).map(([f,t])=>[clean(f),t]));
+  const list=(window.svRawCats||[]).filter(c=>!q||clean(c).includes(q));
+  box.innerHTML=list.map(c=>{const m=man.get(clean(c));return `<label style="display:flex;align-items:center;gap:6px;margin:0;padding:6px 8px;border-radius:8px;background:#f7f8fb"><input type="checkbox" data-selcat="${esc(c)}" ${sel.has(c)?'checked':''}><span style="flex:1"><b>${esc(c)}</b> <small style="color:#687386">· ${cnt.get(c)||0} ch</small></span>${m?`<small style="color:#16803d">→ ${esc(m)}</small>`:''}</label>`}).join('')||'<small>Playlist load karein ya search badlein.</small>';
+  updSel();
+ }
+ function updSel(){const el=$('svSelCount');if(el)el.textContent=sel.size?sel.size+' selected':''}
  function renderRows(){
   const q=clean($('svMapSearch').value);
   $('svMapRows').innerHTML=allCh().filter(c=>!q||clean(c.name).includes(q)||clean(c.svCat).includes(q)).slice(0,300).map(c=>`<div class="sv-maprow"><div><b>${esc(c.name||'Unnamed channel')}</b><small>${esc(c.svCat||'Uncategorized')} · No. ${c.svNum||'-'}</small></div><input type="number" min="1" max="99999" placeholder="#" data-sv-key="${esc(chKey(c))}" value="${esc(nums[chKey(c)]||'')}" aria-label="Manual channel number"></div>`).join('')||'<p>Playlist load karein ya search badlein.</p>';
@@ -3393,6 +3460,19 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  $('svMergeAll').onclick=()=>{(window.svDupes||[]).forEach(mergeDupe);persist();refresh();toast('✅ Duplicate categories merged',1800)};
  $('svDupes').addEventListener('click',e=>{const b=e.target.closest('[data-mg]');if(!b)return;const d=(window.svDupes||[])[Number(b.dataset.mg)];if(d){mergeDupe(d);persist();refresh()}});
  $('svMergeAdd').onclick=()=>{const from=$('svMergeFrom').value.trim(),to=$('svMergeTo').value.trim();if(!from||!to){$('svMapStatus').textContent='Dono category names bharein.';return}merges[from]=to;$('svMergeFrom').value='';$('svMergeTo').value='';persist();refresh()};
+ $('svCatFilter').addEventListener('input',renderAllCats);
+ $('svAllCats').addEventListener('change',e=>{const el=e.target.closest('[data-selcat]');if(!el)return;if(el.checked)sel.add(el.dataset.selcat);else sel.delete(el.dataset.selcat);updSel()});
+ $('svSelAll').onclick=()=>{const q=clean($('svCatFilter').value);(window.svRawCats||[]).filter(c=>!q||clean(c).includes(q)).forEach(c=>sel.add(c));renderAllCats()};
+ $('svSelNone').onclick=()=>{sel.clear();renderAllCats()};
+ $('svSelMerge').onclick=()=>{
+  const to=$('svSelTo').value.trim();
+  if(!sel.size){$('svMapStatus').textContent='Pehle kuch categories tick karein.';return}
+  if(!to){$('svMapStatus').textContent='Folder ka naam likhein.';return}
+  let n=0;sel.forEach(c=>{if(clean(c)!==clean(to)){merges[c]=to;n++}});
+  Object.keys(merges).forEach(k=>{if(clean(k)===clean(to))delete merges[k]});
+  sel.clear();$('svSelTo').value='';persist();refresh();
+  $('svMapStatus').textContent='';toast('✅ '+n+' categories "'+to+'" mein merge ho gayi',2200);
+ };
  $('svMergeRows').addEventListener('click',e=>{const b=e.target.closest('[data-delmerge]');if(b){delete merges[b.dataset.delmerge];persist();refresh()}});
  $('svMapSave').onclick=()=>{const ok=persist();refresh();$('svMapStatus').textContent=ok?'Settings saved on this device.':'Save nahi hua; browser storage check karein.'};
  const STKEY='santv_channel_status_v1';
@@ -3418,6 +3498,246 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  },true);
  // Keep the number toast visible while the browser is in full screen.
  ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{(document.fullscreenElement||document.webkitFullscreenElement||document.body).appendChild(toastEl)}));
+})();
+</script>
+
+<!-- SanTV proxy settings (Cloudflare Worker) -->
+<style>#svProxyPage{position:fixed;inset:0;z-index:9100;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svProxyPage input[type=text]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd3df;border-radius:9px;background:#fff;color:#172033;font-size:15px}#svProxyPage button{padding:12px 16px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700;font-size:14px}#svProxyPage .g{background:#e9edf4;color:#172033}#svProxyPage label{display:block;margin:10px 0}#svProxyPage input[type=checkbox]{width:20px;height:20px;vertical-align:middle;margin-right:8px}#svProxyPage button:focus-visible,#svProxyPage input:focus-visible{outline:3px solid #ffb400;outline-offset:2px}</style>
+<div id="svProxyPage"><div style="display:flex;align-items:center;gap:12px"><button id="svPxBack">← Back</button><h2 style="margin:8px 0">Proxy (Cloudflare Worker)</h2></div>
+<p>Cloudflare Worker ka URL yahan paste karein. Agar sirf <b>https://naam.workers.dev</b> paste karenge to <b>/?url=</b> apne aap lag jaayega. Worker ko <b>?url=</b> ke baad stream ka link lena chahiye.</p>
+<input type="text" id="svPxUrl" placeholder="https://naam.workers.dev/?url=" autocapitalize="off" autocomplete="off" spellcheck="false">
+<label><input type="checkbox" id="svPxOn">Proxy chalu rakho</label>
+<label><input type="checkbox" id="svPxFirst">Pehle proxy se chalao (TV / http channels ke liye behtar)</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><button id="svPxSave">Save</button><button id="svPxTest" class="g">Test proxy</button><button id="svPxRemove" class="g">Remove</button></div>
+<p id="svPxStatus" aria-live="polite"></p></div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const K='iptv_proxy',KS='sv_proxy_saved',KF='sv_proxy_first';
+ const get=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
+ const set=(k,v)=>{try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}};
+ const st=(t,bad)=>{const el=$('svPxStatus');el.textContent=t;el.style.color=bad?'#b02b3d':'#16803d'};
+ function norm(v){
+  v=String(v||'').trim();if(!v)return '';
+  if(!/^https?:\/\//i.test(v))v='https://'+v;
+  const i=v.toLowerCase().indexOf('url=');if(i>=0)v=v.slice(0,i+4);
+  if(v.indexOf('?')<0)v=v.replace(/\/+$/,'')+'/?url=';else if(/\?$/.test(v))v+='url=';
+  return v;
+ }
+ function open(){
+  const saved=get(KS)||get(K);
+  $('svPxUrl').value=saved;
+  $('svPxOn').checked=saved?!!get(K):true;
+  $('svPxFirst').checked=get(KF)==='1';
+  st(get(K)?'Proxy abhi chalu hai.':(saved?'Proxy saved hai par band hai.':'Abhi koi proxy set nahi hai.'));
+  $('svProxyPage').style.display='flex';
+ }
+ function save(url,on,first){
+  set(KS,url);set(K,on?url:'');set(KF,first?'1':'');
+  const pi=$('proxyUrlInput');if(pi)pi.value=on?url:'';
+  if(typeof window.svRefresh==='function')window.svRefresh();
+ }
+ $('svPxSave').onclick=()=>{
+  const u=norm($('svPxUrl').value);
+  if(!u){st('Pehle Worker ka URL paste karein.',1);return}
+  $('svPxUrl').value=u;save(u,$('svPxOn').checked,$('svPxFirst').checked);
+  st($('svPxOn').checked?'✅ Save ho gaya, proxy chalu hai.':'✅ Save ho gaya (proxy abhi band hai).');
+ };
+ $('svPxRemove').onclick=()=>{save('',false,false);$('svPxUrl').value='';$('svPxOn').checked=true;$('svPxFirst').checked=false;st('Proxy hata diya.')};
+ $('svPxTest').onclick=async()=>{
+  const u=norm($('svPxUrl').value);if(!u){st('Pehle Worker ka URL paste karein.',1);return}
+  let target='';try{target=((typeof channels!=='undefined'&&channels[0])||{}).url||''}catch(e){}
+  if(!target)target='https://example.com/';
+  st('Test chal raha hai…');
+  try{
+   const r=await Promise.race([fetch(u+encodeURIComponent(target),{cache:'no-store'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),9000))]);
+   try{r.body&&r.body.cancel&&r.body.cancel()}catch(e){}
+   st(r.ok?'✅ Proxy chal raha hai (HTTP '+r.status+').':'⚠ Proxy ne HTTP '+r.status+' diya. Worker ka code ya URL check karein.',!r.ok);
+  }catch(e){st('❌ Proxy tak pahunch nahi paye: '+(e.message||e),1)}
+ };
+ $('svPxBack').onclick=()=>{$('svProxyPage').style.display='none'};
+ const settings=$('settingsPage');
+ if(settings){const item=document.createElement('div');item.className='settings-item';item.tabIndex=0;item.innerHTML='<div class="settings-item-left">🌐 Proxy (Cloudflare Worker)</div><div class="settings-item-right">Add ›</div>';item.addEventListener('click',open);item.addEventListener('keydown',e=>{if(e.key==='Enter')open()});settings.querySelector('.settings-list')?.appendChild(item)}
+})();
+</script>
+
+<!-- ===== SanTV: Settings password (today's DDMM) ===== -->
+<style>
+#svPassGate{position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:16px}
+#svPassGate .box{background:#fff;color:#172033;border-radius:16px;padding:22px;width:min(340px,100%);text-align:center;font:15px system-ui}
+#svPassGate h3{margin:0 0 6px;font-size:19px}
+#svPassGate input{width:100%;box-sizing:border-box;padding:14px;border:2px solid #ccd3df;border-radius:12px;font-size:26px;letter-spacing:10px;text-align:center;margin:14px 0 8px;background:#fff;color:#172033}
+#svPassGate input:focus{outline:none;border-color:#b02b3d}
+#svPassGate button{padding:12px 18px;border:0;border-radius:10px;font-weight:700;font-size:15px;margin:4px;background:#b02b3d;color:#fff}
+#svPassGate button.g{background:#e9edf4;color:#172033}
+#svPassGate button:focus-visible{outline:3px solid #ffb400;outline-offset:2px}
+#svPassGate .err{color:#b02b3d;min-height:20px;font-weight:700}
+@keyframes svShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+</style>
+<div id="svPassGate" role="dialog" aria-modal="true" aria-label="Settings password"><div class="box"><h3>🔒 Settings</h3><div style="color:#687386">Password daalein</div><input id="svPassIn" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"><div class="err" id="svPassErr"></div><div><button id="svPassOk">Open</button><button id="svPassCancel" class="g">Cancel</button></div></div></div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const today=()=>{const d=new Date();return String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')};
+ const gate=$('svPassGate'),inp=$('svPassIn'),err=$('svPassErr');
+ function close(){gate.style.display='none';inp.value='';err.textContent=''}
+ function submit(){
+  if(inp.value===today()){
+   close();window.svAdmin=true;
+   if(window.svSyncAdminOn)try{window.svSyncAdminOn()}catch(e){}
+   const sp=$('settingsPage');if(sp)sp.style.display='flex';
+  }else{
+   err.textContent='Galat password';inp.value='';
+   const b=gate.firstElementChild;b.style.animation='none';void b.offsetWidth;b.style.animation='svShake .3s';inp.focus();
+  }
+ }
+ window.svOpenSettings=function(){
+  gate.style.display='flex';inp.value='';err.textContent='';
+  setTimeout(()=>inp.focus(),30);
+ };
+ $('svPassOk').onclick=submit;$('svPassCancel').onclick=close;
+ inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\D/g,'').slice(0,4);if(inp.value.length===4)submit()});
+ inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();submit()}else if(e.key==='Escape'){close()}},true);
+})();
+</script>
+
+<!-- ===== SanTV: Live Sync (settings change once, every device updates live) ===== -->
+<style>#svSyncPage{position:fixed;inset:0;z-index:9100;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svSyncPage input[type=text]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd3df;border-radius:9px;background:#fff;color:#172033;font-size:15px}#svSyncPage button{padding:12px 16px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700;font-size:14px}#svSyncPage .g{background:#e9edf4;color:#172033}#svSyncPage button:focus-visible,#svSyncPage input:focus-visible{outline:3px solid #ffb400;outline-offset:2px}#svSyncToast{position:fixed;z-index:99998;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;border-radius:12px;padding:10px 16px;font:600 14px system-ui;display:none;max-width:90vw;text-align:center}</style>
+<div id="svSyncPage"><div style="display:flex;align-items:center;gap:12px"><button id="svSyBack">← Back</button><h2 style="margin:8px 0">Live Sync (sab devices)</h2></div>
+<p>Yahan se jo bhi setting badlenge (category merge, channel numbers, proxy, playlist URL, display, sort) wo <b>sab devices par live</b> badal jayegi. Iske liye ek free Firebase Realtime Database chahiye.</p>
+<p><b>Database URL</b> (jaise <code>https://naam-default-rtdb.firebaseio.com</code>):</p>
+<input type="text" id="svSyUrl" placeholder="https://naam-default-rtdb.firebaseio.com" autocapitalize="off" autocomplete="off" spellcheck="false">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><button id="svSySave">Save & connect</button><button id="svSyPush" class="g">Abhi sab par publish karo</button><button id="svSyOff" class="g">Disconnect</button></div>
+<p id="svSyStatus" aria-live="polite"></p>
+<small style="color:#687386">Tip: is URL ko HTML file ke upar <code>SV_SYNC_URL</code> mein ek baar paste kar dein, to dusre devices par bhi apne aap connect ho jayega (sirf dekhne wale devices ko settings ka password nahi chahiye).</small></div>
+<div id="svSyncToast"></div>
+<script>
+(function(){
+ /* >>> Firebase Realtime Database URL yahan paste karein (sab devices ke liye) <<< */
+ const SV_SYNC_URL = 'https://sanhubweb1-default-rtdb.firebaseio.com';
+ const $=id=>document.getElementById(id);
+ const URLKEY='santv_sync_url',DOC='/santv_config.json';
+ const KEYS=['santv_category_merges_v1','santv_custom_channel_numbers_v1','santv_numcfg_v2','iptv_proxy','sv_proxy_saved','sv_proxy_first','santv_display_settings_v2','santv_sort','iptv_m3u_url'];
+ const MAPK=['santv_category_merges_v1','santv_custom_channel_numbers_v1','santv_numcfg_v2'];
+ const PROXYK=['iptv_proxy','sv_proxy_saved','sv_proxy_first'];
+ const DEV=Math.random().toString(36).slice(2,10);
+ const proto=Storage.prototype,_set=proto.setItem,_rem=proto.removeItem;
+ let applying=false,admin=false,es=null,poll=null,pushT=null,lastT=0,loaded=false,remoteEmpty=false,busy=false,state='off',lastAt=0;
+ const rawGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+ const base=()=>{let u=(rawGet(URLKEY)||SV_SYNC_URL||'').trim();u=u.replace(/\.json.*$/,'').replace(/\/+$/,'');return /^https:\/\//i.test(u)?u:''};
+ const toastEl=$('svSyncToast');let tt;
+ function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(tt);tt=setTimeout(()=>toastEl.style.display='none',2600)}
+ function status(){
+  const el=$('svSyStatus');if(!el)return;
+  const t=lastAt?' · last update '+new Date(lastAt).toLocaleTimeString():'';
+  if(!base()){el.textContent='Sync abhi band hai (URL set nahi).';el.style.color='#687386'}
+  else if(state==='live'){el.textContent='🟢 Live connected'+t+(admin?' · aap admin hain: aapke changes sab par jayenge.':'');el.style.color='#16803d'}
+  else if(state==='err'){el.textContent='🔴 Connect nahi ho paya. URL aur Firebase rules check karein (read/write true). Dobara try ho raha hai…';el.style.color='#b02b3d'}
+  else{el.textContent='Connect ho raha hai…';el.style.color='#687386'}
+ }
+ async function push(){
+  const b=base();if(!b||!admin)return;
+  const d={};KEYS.forEach(k=>{const v=rawGet(k);if(v!==null&&v!=='')d[k]=v});
+  lastT=Date.now();
+  try{
+   const r=await fetch(b+DOC,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:lastT,by:DEV,d})});
+   if(!r.ok)throw new Error('HTTP '+r.status);
+   remoteEmpty=false;lastAt=Date.now();state='live';status();toast('☁️ Sab devices par update bhej diya');
+  }catch(e){state='err';status();toast('❌ Sync fail: '+(e.message||e))}
+ }
+ function schedule(){if(!admin||!base()||applying)return;clearTimeout(pushT);pushT=setTimeout(push,600)}
+ proto.setItem=function(k){const r=_set.apply(this,arguments);if(this===localStorage&&KEYS.indexOf(k)>=0)schedule();return r};
+ proto.removeItem=function(k){const r=_rem.apply(this,arguments);if(this===localStorage&&KEYS.indexOf(k)>=0)schedule();return r};
+
+ function applyRemote(doc){
+  if(!doc||typeof doc!=='object'){remoteEmpty=true;return}
+  if(doc.t&&doc.t===lastT&&doc.by===DEV)return;           // my own echo
+  const d=doc.d||{},changed=new Set();
+  applying=true;
+  try{
+   KEYS.forEach(k=>{
+    const cur=rawGet(k),nv=Object.prototype.hasOwnProperty.call(d,k)?d[k]:null;
+    if(nv===null){if(k==='iptv_m3u_url')return;if(cur!==null){_rem.call(localStorage,k);changed.add(k)}}
+    else if(cur!==nv){_set.call(localStorage,k,nv);changed.add(k)}
+   });
+   if(changed.size){
+    if(MAPK.some(k=>changed.has(k))&&window.svReloadMapCfg)try{window.svReloadMapCfg()}catch(e){console.error(e)}
+    if(changed.has('santv_display_settings_v2'))try{loadDisplaySettings();applyDisplaySettings();applyOrientationPreference()}catch(e){console.error(e)}
+    if(PROXYK.some(k=>changed.has(k))){try{const p=$('proxyUrlInput');if(p)p.value=rawGet('iptv_proxy')||''}catch(e){} if(window.svRefresh)try{window.svRefresh()}catch(e){}}
+    if(changed.has('santv_sort')){const s=$('channelSort'),v=rawGet('santv_sort');if(s&&v){s.value=v;s.dispatchEvent(new Event('change'))}}
+    if(changed.has('iptv_m3u_url')){const u=rawGet('iptv_m3u_url');try{if(u&&u!==lastPlaylistUrl)loadIPTV(u,true)}catch(e){console.error(e)}}
+    lastAt=Date.now();toast('⚙️ Settings live update ho gayi');
+   }
+  }finally{applying=false}
+ }
+ async function fetchOnce(){
+  const b=base();if(!b||busy)return;busy=true;
+  try{
+   const r=await fetch(b+DOC,{cache:'no-store'});
+   if(!r.ok)throw new Error('HTTP '+r.status);
+   const doc=await r.json();loaded=true;state='live';applyRemote(doc);
+   if(doc===null&&admin)push();
+  }catch(e){state='err'}
+  busy=false;status();
+ }
+ function connect(){
+  try{if(es)es.close()}catch(e){} es=null;clearInterval(poll);poll=null;
+  const b=base();state=b?'conn':'off';status();if(!b)return;
+  fetchOnce();
+  try{
+   es=new EventSource(b+DOC);
+   const h=()=>fetchOnce();
+   es.addEventListener('put',h);es.addEventListener('patch',h);
+   es.onerror=()=>{state='err';status()};
+  }catch(e){}
+  poll=setInterval(fetchOnce,25000);               // safety net when a TV browser has no EventSource
+ }
+ window.svSyncAdminOn=function(){admin=true;status();if(loaded&&remoteEmpty)push()};
+
+ const settings=$('settingsPage');
+ if(settings){const item=document.createElement('div');item.className='settings-item';item.tabIndex=0;item.innerHTML='<div class="settings-item-left">☁️ Live Sync (sab devices)</div><div class="settings-item-right">Setup ›</div>';const open=()=>{$('svSyUrl').value=rawGet(URLKEY)||SV_SYNC_URL;status();$('svSyncPage').style.display='flex'};item.addEventListener('click',open);item.addEventListener('keydown',e=>{if(e.key==='Enter')open()});settings.querySelector('.settings-list')?.appendChild(item)}
+ $('svSyBack').onclick=()=>{$('svSyncPage').style.display='none'};
+ $('svSySave').onclick=()=>{
+  let u=$('svSyUrl').value.trim();
+  if(u&&!/^https:\/\//i.test(u))u='https://'+u;
+  try{if(u)_set.call(localStorage,URLKEY,u);else _rem.call(localStorage,URLKEY)}catch(e){}
+  loaded=false;remoteEmpty=false;connect();
+ };
+ $('svSyPush').onclick=()=>{if(!base()){toast('Pehle Database URL save karein');return}admin=true;push()};
+ $('svSyOff').onclick=()=>{try{_rem.call(localStorage,URLKEY)}catch(e){}$('svSyUrl').value='';try{if(es)es.close()}catch(e){}clearInterval(poll);state='off';status()};
+ connect();
+})();
+</script>
+
+<!-- ===== SanTV: TV remote - press OK twice on the screen = full screen ===== -->
+<style>#inlinePlayerBox:focus{outline:3px solid #2864f0;outline-offset:-3px}#player-screen:focus{outline:none}</style>
+<script>
+(function(){
+ const box=document.getElementById('inlinePlayerBox'),vid=document.getElementById('inlineVideo'),ps=document.getElementById('player-screen');
+ if(box){box.tabIndex=0;box.setAttribute('aria-label','Player - OK do baar dabayein full screen ke liye')}
+ if(ps)ps.tabIndex=-1;
+ const isOk=e=>e.key==='Enter'||e.key==='Select'||e.key==='OK'||e.keyCode===13||e.keyCode===23||e.keyCode===29443;
+ const isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+ let last=0;
+ function onScreen(t){
+  if(!t||t===document.body||t===document.documentElement||t===box||t===vid||t===ps)return true;
+  if(/^(BUTTON|INPUT|SELECT|TEXTAREA|A)$/.test(t.tagName))return false;
+  return !!(ps&&ps.contains(t))||!!(box&&box.contains(t));
+ }
+ function toggle(){try{if(window.svToggleFs)window.svToggleFs()}catch(e){}}
+ document.addEventListener('keydown',function(e){
+  if(!isOk(e)||e.repeat)return;
+  const t=e.target;
+  const pageOpen=[...document.querySelectorAll('#settingsPage,#svMapPage,#svProxyPage,#svSyncPage,#svPassGate,#dataUsagePage,#search-page,#contentLangPage,#displaySettingsPage')].some(x=>getComputedStyle(x).display!=='none');
+  if(pageOpen)return;
+  if(!onScreen(t)){last=0;return}
+  if(t===document.body||t===document.documentElement){ if(!isFs()&&!(typeof plOpen!=="undefined"&&plOpen))return; }  // body OK counts only while player is open
+  const now=Date.now();
+  if(now-last<650){last=0;e.preventDefault();e.stopPropagation();toggle()}
+  else last=now;
+ },true);
+ [box,vid].forEach(el=>el&&el.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;e.preventDefault();toggle()}));
+ ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{setTimeout(()=>{try{(isFs()?ps:box)&&(isFs()?ps:box).focus({preventScroll:true})}catch(x){}},120)}));
 })();
 </script>
 
