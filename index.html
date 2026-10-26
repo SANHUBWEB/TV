@@ -469,6 +469,27 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   .channel-item .fav-btn { width: 30px !important; height: 30px !important; flex: 0 0 30px !important; }
 }
 
+/* Dashboard Manager usability: larger touch targets and better small-screen layout */
+#dmPage button{min-height:44px;touch-action:manipulation}
+#dmPage input,#dmPage select{min-height:44px;font-size:16px}
+#dmBody{padding:14px 14px calc(110px + env(safe-area-inset-bottom,0px))}
+.dm-item{min-height:58px;padding:12px;gap:12px}
+.dm-item b{white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+@media(max-width:600px){
+ #dmPage .dm-top{padding:12px;gap:12px}
+ #dmPage .dm-top h2{font-size:20px}
+ #dmPage .dm-seg{padding:10px;gap:8px}
+ #dmPage .dm-seg button{min-height:44px;padding:10px 14px}
+ #dmBody{padding:12px 10px calc(110px + env(safe-area-inset-bottom,0px))}
+ .dm-ed{display:grid;grid-template-columns:1fr;gap:12px;padding:12px}
+ .dm-prev{width:100%;flex:auto}
+ .dm-prev video{width:100%;height:auto;aspect-ratio:16/9}
+ .dm-form{min-width:0;width:100%}
+ .dm-row{gap:8px}
+ .dm-row button{flex:1 1 auto}
+ .dm-card{padding:14px}
+}
+
 /* ---------- phones (<=600): player pinned on top, list scrolls beneath, filters in an overlay ---------- */
 @media (max-width: 600px) {
   :root { --sv-header-h: 60px; }
@@ -777,6 +798,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 <button id="saveUrlBtn">Save & Load Channels</button>
                 <button class="refresh-btn" id="refreshUrlBtn" style="display: none;">🔄 Refresh Channels</button>
                 <button class="clear-btn" id="clearCacheBtn" style="display: none;">🗑️ Clear Cache</button>
+                <p style="font-size:13px;color:#687386;line-height:1.45">Refresh adds new channels to your saved list. Channels will stay here even if they disappear from a later playlist. Use “Clear Cache” only when you want to delete the saved list.</p>
             </div>
             <p style="color:#888; margin-top:24px; font-size:13px;">Optional: your own CORS proxy for streams that fail to play. Format: https://your-proxy.example/?url=</p>
             <div class="url-input-group" style="margin-top:8px;">
@@ -952,17 +974,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 return true;
             } catch (e) {
                 console.error('Cache save error (maybe quota exceeded):', e);
-                // If quota exceeded, try clearing and saving again
-                try {
-                    localStorage.removeItem(CACHE_KEY_CHANNELS);
-                    localStorage.setItem(CACHE_KEY_CHANNELS, JSON.stringify(channelArray.slice(0, 500)));
-                    localStorage.setItem(CACHE_KEY_URL, url);
-                    localStorage.setItem(CACHE_KEY_TIMESTAMP, Date.now().toString());
-                    console.log('Saved only first 500 channels due to storage limit');
-                    return true;
-                } catch (e2) {
-                    return false;
-                }
+                // Never erase the previous master list on quota errors. Keep the old
+                // saved list intact and tell the user the newest merge could not be saved.
+                return false;
             }
         }
 
@@ -1563,6 +1577,31 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             throw lastErr || new Error('Playlist download failed');
         }
 
+        // Keep a permanent master channel list: refreshes add/update channels but never
+        // remove channels that disappeared from today's source playlist. Only Clear Cache deletes it.
+        function mergePermanentChannels(previous, incoming) {
+            const result = Array.isArray(previous) ? previous.slice() : [];
+            const indexes = new Map();
+            const keyFor = c => {
+                const u = String(c && c.url || '').trim().toLowerCase();
+                if (u) return 'url:' + u;
+                return 'name:' + String(c && c.name || '').trim().toLowerCase() + '|group:' + String(c && c.group || '').trim().toLowerCase();
+            };
+            result.forEach((c, i) => indexes.set(keyFor(c), i));
+            (Array.isArray(incoming) ? incoming : []).forEach(c => {
+                const k = keyFor(c);
+                if (indexes.has(k)) {
+                    const i = indexes.get(k);
+                    // Refresh stream metadata while retaining user/dashboard-only fields.
+                    result[i] = { ...result[i], ...c };
+                } else {
+                    indexes.set(k, result.length);
+                    result.push(c);
+                }
+            });
+            return result;
+        }
+
         async function loadIPTV(url, saveToCache = true) {
             const listContainer = document.getElementById('channelListContainer');
             const urlStatusMsg = document.getElementById('urlStatusMsg');
@@ -1573,7 +1612,10 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             if (urlStatusMsg) { urlStatusMsg.style.display = 'block'; urlStatusMsg.style.color = '#4caf50'; urlStatusMsg.innerHTML = '<span class="spinner"></span> Downloading playlist...'; }
             try {
                 const data = await fetchPlaylist(url);
-                channels = parseM3U(data);
+                const freshChannels = parseM3U(data);
+                // Merge with the saved master list so a smaller playlist tomorrow cannot
+                // silently shrink the dashboard. Deduplication is by stream URL.
+                channels = saveToCache ? mergePermanentChannels(loadChannelsFromCache() || channels, freshChannels) : freshChannels;
                 buildAutoFilters(channels);
                 if (!channels.length) { playlistState = 'ready'; throw new Error('No channels found. Check that the URL points to a valid M3U playlist.'); }
                 playlistState = 'ready';
@@ -1582,7 +1624,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (saveToCache) {
                     const saved = saveChannelsToCache(channels, url);
                     if (urlStatusMsg) {
-                        urlStatusMsg.innerHTML = saved ? `✅ ${channels.length} channels loaded and cached!` : `✅ ${channels.length} channels loaded.`;
+                        urlStatusMsg.innerHTML = saved ? `✅ ${channels.length} total saved channels. New channels were added; older channels were kept.` : `✅ ${channels.length} channels loaded.`;
                         urlStatusMsg.style.color = saved ? '#4caf50' : '#ff9800';
                     }
                 }
@@ -1682,6 +1724,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             return BUILTIN_PROXIES.map((fn, i) => ({ label: 'proxy' + (i + 1), kind: 'loader', wrap: fn }));
         }
 
+        window.__svBootAt = window.__svBootAt || Date.now();
         let playToken = 0;
         let attemptTimer = null;
 
@@ -1763,7 +1806,20 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         }
         const playbackPlatform = detectPlaybackPlatform();
 
+        // Per-channel player chosen in Dashboard Manager ('' = Auto). Values: hlsjs | native | proxy | external
+        function svChannelPlayer(url) {
+            try {
+                const a = (JSON.parse(localStorage.getItem('santv_dash_v1') || '{}') || {}).assign || {};
+                const p = a[String(url || '').trim()];
+                return (p && p.player) || '';
+            } catch (_) { return ''; }
+        }
+
         function buildModes(url, nativeOnly, canNativeHls) {
+            const forced = svChannelPlayer(url);
+            if (forced === 'native') return [{ label: 'native (selected)', kind: 'native' }];
+            if (forced === 'hlsjs') return [{ label: 'HLS.js (selected)', kind: 'direct' }];
+            if (forced === 'proxy') { const pm = getProxyModes(); if (pm.length) return pm; }
             const modes = [];
             const mixed = location.protocol === 'https:' && /^http:\/\//i.test(url);
             // HTTPS pages cannot load HTTP streams directly (mixed-content blocking).
@@ -1790,6 +1846,12 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             if (inlinePlayerBox) inlinePlayerBox.classList.remove('playing');
             setHint('Auto player: ' + playbackPlatform.device + ' · ' + playbackPlatform.browser + ' · detecting stream…');
             if (!url) { showInlineError('No stream URL'); return; }
+
+            if (svChannelPlayer(url) === 'external') {
+                setHint('Is channel ke liye External Player (VLC / MX) set hai');
+                if (Date.now() - (window.__svBootAt || 0) > 5000) { const eb = document.getElementById('externalPlayerBtn'); if (eb) eb.click(); }
+                return;
+            }
 
             const nativeOnly = /\.(mp4|m4v|webm|ogv|mov|mp3|aac|ogg)(?:[?#]|$)/i.test(url);
             const canNativeHls = !!inlineVideo.canPlayType('application/vnd.apple.mpegurl');
@@ -2095,10 +2157,29 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
         function getCategoryScopedChannels() {
             const current = currentChannelObj();
-            const key = channelCategoryKey(current);
-            if (!key) return filteredChannels.length ? filteredChannels : channels;
-            const scoped = channels.filter(c => channelCategoryKey(c) === key && !c.svHide);
-            return scoped.length ? scoped : (filteredChannels.length ? filteredChannels : channels);
+            // The player's bottom strip must only contain channels matching the
+            // currently playing channel's saved Category AND Language.
+            let saved = {};
+            try { saved = JSON.parse(localStorage.getItem('santv_dash_v1') || '{}') || {}; } catch (_) {}
+            const assignments = saved.assign || {};
+            const keyOf = c => String(c && (c.url || c.name) || '').trim();
+            const assignment = c => assignments[keyOf(c)] || null;
+            const currentAssignment = current ? assignment(current) : null;
+            const currentCat = String(currentAssignment && currentAssignment.cat || '').trim().toLowerCase();
+            const currentLang = String(currentAssignment && currentAssignment.lang || '').trim().toLowerCase();
+
+            // No category/language saved for the playing channel? Do not show
+            // unrelated channels as a fallback.
+            if (!currentCat || !currentLang) return [];
+
+            return channels.filter(c => {
+                const a = assignment(c);
+                return !!a &&
+                    String(a.cat || '').trim().toLowerCase() === currentCat &&
+                    String(a.lang || '').trim().toLowerCase() === currentLang &&
+                    a.show !== false &&
+                    !c.svHide;
+            });
         }
         function layoutPlayer() {
             const iw = window.innerWidth, ih = window.innerHeight;
@@ -2582,7 +2663,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
         // Clear Cache Button
         clearCacheBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to clear the cached channels?')) {
+            if (confirm('Delete the permanently saved channel list and cache? This cannot be undone.')) {
                 clearCache();
                 updateCacheInfo();
                 iptvUrlInput.value = '';
@@ -3617,8 +3698,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  const SV_SYNC_URL = 'https://sanhubweb1-default-rtdb.firebaseio.com';
  const $=id=>document.getElementById(id);
  const URLKEY='santv_sync_url',DOC='/santv_config.json';
- const KEYS=['santv_category_merges_v1','santv_custom_channel_numbers_v1','santv_numcfg_v2','iptv_proxy','sv_proxy_saved','sv_proxy_first','santv_display_settings_v2','santv_sort','iptv_m3u_url'];
- const MAPK=['santv_category_merges_v1','santv_custom_channel_numbers_v1','santv_numcfg_v2'];
+ const KEYS=['santv_category_merges_v1','santv_custom_channel_numbers_v1','santv_numcfg_v2','santv_dash_v1','iptv_proxy','sv_proxy_saved','sv_proxy_first','santv_display_settings_v2','santv_sort','iptv_m3u_url'];
+ const MAPK=['santv_category_merges_v1','santv_custom_channel_numbers_v1','santv_numcfg_v2','santv_dash_v1'];
  const PROXYK=['iptv_proxy','sv_proxy_saved','sv_proxy_first'];
  const DEV=Math.random().toString(36).slice(2,10);
  const proto=Storage.prototype,_set=proto.setItem,_rem=proto.removeItem;
@@ -3740,6 +3821,352 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{setTimeout(()=>{try{(isFs()?ps:box)&&(isFs()?ps:box).focus({preventScroll:true})}catch(x){}},120)}));
 })();
 </script>
+
+<!-- ===== SanTV Dashboard Manager ===== -->
+<style>
+#dmPage{position:fixed;inset:0;z-index:3700;background:#f5f7fb;color:#18202b;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0)}
+#dmPage *{box-sizing:border-box}
+.dm-top{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #e3e7ee}
+.dm-top h2{font-size:18px;margin:0}
+#dmPage button{font:inherit;border:0;border-radius:10px;padding:9px 13px;background:#a81c2f;color:#fff;font-weight:600;cursor:pointer}
+#dmPage button.g{background:#e9edf4;color:#18202b}
+#dmPage button.sm{padding:6px 9px;font-size:13px}
+.dm-seg{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;background:#fff}
+.dm-seg button{background:#e9edf4;color:#18202b;white-space:nowrap}
+.dm-seg button.on{background:#a81c2f;color:#fff}
+#dmBody{flex:1;overflow:auto;padding:12px 12px 80px}
+#dmPage input,#dmPage select{font:inherit;padding:9px;border:1px solid #d5dbe5;border-radius:10px;background:#fff;color:#18202b;width:100%;min-width:0}
+.dm-ed{display:flex;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e3e7ee;border-radius:14px;padding:12px;margin-bottom:12px}
+.dm-prev{width:150px;flex:0 0 150px}
+.dm-prev video{width:150px;height:90px;background:#111;border-radius:10px;object-fit:contain;display:block}
+#dmPst{display:block;font-size:12px;margin-top:6px;font-weight:700;color:#687386}
+#dmPst.ok{color:#16803d}#dmPst.bad{color:#b02b3d}
+.dm-form{flex:1;min-width:170px;display:grid;gap:8px}
+.dm-form label{font-size:12px;color:#687386;display:grid;gap:3px}
+.dm-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dm-item{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:10px;margin-bottom:6px;cursor:pointer}
+.dm-item.sel{border-color:#a81c2f;background:#fff4f6}
+.dm-item b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-item small{color:#687386}
+.dm-card{background:#fff;border:1px solid #e3e7ee;border-radius:14px;padding:12px;margin-bottom:10px;display:grid;gap:8px}
+.dm-sub{border-left:3px solid #a81c2f;padding-left:10px;display:grid;gap:6px}
+.dm-chk{display:flex;gap:8px;align-items:center;font-size:14px;color:#18202b!important}
+.dm-chk input{width:auto}
+details.dm-card summary{font-weight:700;cursor:pointer}
+#dmToast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#18202b;color:#fff;padding:9px 16px;border-radius:20px;font-size:14px;display:none;z-index:3800}
+#dmFolderBar{display:none;gap:8px;overflow-x:auto;padding:8px 12px;flex:0 0 auto;scrollbar-width:none}
+#dmFolderBar button{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:1px solid #e3e7ee;background:#fff;border-radius:22px;padding:6px 12px 6px 6px;font:inherit;font-weight:600;font-size:13px;color:#18202b;cursor:pointer}
+#dmFolderBar button.on{background:#a81c2f;color:#fff;border-color:#a81c2f}
+#dmFolderBar i{font-style:normal;width:28px;height:28px;border-radius:50%;background:#eef1f6;display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
+#dmFolderBar img{width:100%;height:100%;object-fit:cover}
+.bottom-nav .dm-ico{font-size:21px;line-height:24px;height:24px;display:block}
+</style>
+<div id="dmPage">
+ <div class="dm-top"><button id="dmBack" class="g">←</button><h2>Dashboard Manager</h2></div>
+ <div class="dm-seg" id="dmSeg"><button data-s="ch" class="on">📺 Channels</button><button data-s="cat">🗂️ Categories</button><button data-s="lang">🌐 Languages</button><button data-s="nav">⬇️ Bottom Nav</button></div>
+ <div id="dmBody"></div>
+</div>
+<div id="dmToast"></div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const KEY='santv_dash_v1';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const low=s=>String(s||'').toLowerCase().trim();
+const CH=()=>Array.isArray(channels)?channels:[];
+const kOf=c=>String(c.url||c.name||'').trim();
+const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const NAVSVG={};
+document.querySelectorAll('.bottom-nav .nav-item').forEach(a=>{const s=a.querySelector('svg');if(s)NAVSVG[a.dataset.nav]=s.outerHTML});
+const PLAYERS=[['','Auto (recommended – sab try karega)'],['hlsjs','HLS.js Player'],['native','Native HTML5 Player'],['proxy','Proxy / Worker Route (HLS.js)'],['external','External Player (VLC / MX)']];
+const plName=v=>(PLAYERS.find(p=>p[0]===(v||''))||PLAYERS[0])[1].replace(/ \(.*\)$/,'');
+const plOpts=cur=>PLAYERS.map(p=>'<option value="'+p[0]+'"'+((cur||'')===p[0]?' selected':'')+'>'+esc(p[1])+'</option>').join('');
+const T=(id,label,mode)=>({id,label,icon:id,mode,match:'',keys:[],folders:[]});
+const DEF=()=>({assign:{},cats:[],langs:[],hideCats:[],hideLangs:[],tabs:[T('home','Home','all'),T('live','Live TV','all'),T('free','Free','free'),T('premium','Premium','premium'),T('trending','Trending','manual')]});
+function load(){try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&Array.isArray(o.tabs)&&o.tabs.length)return Object.assign(DEF(),o)}catch(e){}return DEF()}
+let cfg=load();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch(e){}};
+let tt;function toast(m){const t=$('dmToast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2000)}
+
+/* ---------- tab content ---------- */
+const active={id:'live',folder:null};
+const tab=id=>cfg.tabs.find(t=>t.id===id);
+const hasRule=o=>(o.keys&&o.keys.length)||low(o.match);
+function inSet(c,o){
+ if((o.keys||[]).includes(kOf(c)))return true;
+ const n=low(c.name);return low(o.match).split(',').map(s=>s.trim()).filter(Boolean).some(t=>n.includes(t));
+}
+const isPrem=c=>{const t=low((c.name||'')+' '+(c.group||''));return c.premium===true||c.isPremium===true||/\bpremium\b/.test(t)};
+function tabBase(t){
+ const all=CH();let out=all;
+ if(t.mode==='free')out=all.filter(c=>!isPrem(c));
+ else if(t.mode==='premium'||t.mode==='manual'){
+  const rules=[t].concat(t.folders||[]).filter(hasRule);
+  if(rules.length)out=all.filter(c=>rules.some(r=>inSet(c,r)));
+  else if(t.mode==='premium')out=all.filter(isPrem);
+  else out=[...all].sort((a,b)=>(watchedChannels.has(kOf(b))?1:0)-(watchedChannels.has(kOf(a))?1:0));
+  if(t.keys.length){const ix=new Map(t.keys.map((k,i)=>[k,i]));out=[...out].sort((a,b)=>(ix.has(kOf(a))?ix.get(kOf(a)):1e9)-(ix.has(kOf(b))?ix.get(kOf(b)):1e9))}
+ }
+ return out;
+}
+function restrict(){
+ const t=tab(active.id);
+ let b=t?tabBase(t):CH();
+ if(t&&active.folder!=null&&t.folders[active.folder])b=b.filter(c=>inSet(c,t.folders[active.folder]));
+ // Once the user starts assigning categories in Dashboard Manager, show only categorized channels
+ // in the main channel list/player channel navigation. Unassigned channels remain editable in Manager.
+ const anyAssignedCategoryOrLanguage=CH().some(c=>{const a=cfg.assign[kOf(c)];return !!(a&&(String(a.cat||'').trim()||String(a.lang||'').trim()))});
+ if(anyAssignedCategoryOrLanguage)b=b.filter(c=>{const a=cfg.assign[kOf(c)];return !!(a&&String(a.cat||'').trim()&&String(a.lang||'').trim())});
+ // Per-channel Show/Hide setting applies everywhere. Hidden channels remain editable in Manager.
+ return b.filter(c=>!(cfg.assign[kOf(c)]&&cfg.assign[kOf(c)].show===false));
+}
+const _af=window.applyFilters;
+window.applyFilters=function(src){if(src===channels)src=restrict();return _af.call(this,src)};
+function draw(){try{renderChannels(applyFilters(channels))}catch(e){console.error(e)}}
+
+/* ---------- bottom nav + folder bar ---------- */
+const icon=t=>NAVSVG[t.icon]||'<span class="dm-ico">'+esc(t.icon||'📺')+'</span>';
+function renderNav(){
+ const nav=document.querySelector('.bottom-nav');if(!nav)return;
+ nav.innerHTML=cfg.tabs.map(t=>'<a href="#" class="nav-item'+(t.id===active.id?' active':'')+'" data-nav="'+esc(t.id)+'">'+icon(t)+'<span>'+esc(t.label)+'</span></a>').join('');
+}
+const fico=f=>/^https?:/i.test(f.icon||'')?'<i><img src="'+esc(f.icon)+'" alt="" onerror="this.remove()"></i>':'<i>'+esc(f.icon||'📁')+'</i>';
+function renderFolders(){
+ let bar=$('dmFolderBar');const t=tab(active.id),fs=(t&&t.folders)||[];
+ if(!bar){const lc=$('channelListContainer');if(!lc)return;bar=document.createElement('div');bar.id='dmFolderBar';lc.parentNode.insertBefore(bar,lc);
+  bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const n=+b.dataset.f;active.folder=n<0?null:n;renderFolders();draw()})}
+ bar.style.display=fs.length?'flex':'none';
+ bar.innerHTML=fs.length?'<button data-f="-1" class="'+(active.folder==null?'on':'')+'"><i>🗂️</i>All</button>'+fs.map((f,i)=>'<button data-f="'+i+'" class="'+(active.folder===i?'on':'')+'">'+fico(f)+'<span>'+esc(f.name)+'</span></button>').join(''):'';
+}
+function showTab(id){
+ if(!tab(id))id=cfg.tabs[0].id;
+ active.id=id;active.folder=null;
+ try{closeAllOverlayPages()}catch(e){}
+ renderNav();renderFolders();draw();
+ const lc=$('channelListContainer');if(lc)lc.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelector('.bottom-nav').addEventListener('click',e=>{const a=e.target.closest('.nav-item');if(!a)return;e.preventDefault();showTab(a.dataset.nav)});
+
+/* ---------- category / language overrides ---------- */
+const chLang=c=>{let l=c.filterLanguage||'';if(!l){try{l=inferFilterMeta(c.name,c.group,c.language).language||''}catch(e){}}return cap(l||c.language||'')};
+const chCat=c=>c.svCat||c.filterCategory||c.group||'';
+function overrides(list){
+ const A=cfg.assign;
+ list.forEach(c=>{
+  if(c.dmL===undefined)c.dmL={l:c.language,f:c.filterLanguage};
+  c.language=c.dmL.l;c.filterLanguage=c.dmL.f;
+  const o=A[kOf(c)];if(!o)return;
+  if(o.cat){c.svCat=o.cat;c.group=o.cat;c.filterCategory=o.cat}
+  if(o.lang){c.filterLanguage=o.lang;c.language=o.lang}
+ });
+}
+const uniq=a=>{const m=new Map();a.filter(Boolean).forEach(v=>{if(!m.has(low(v)))m.set(low(v),v)});return[...m.values()].sort((a,b)=>a.localeCompare(b))};
+const _bf=window.buildAutoFilters;
+window.buildAutoFilters=function(list){
+ if(typeof _bf==='function')_bf(list);
+ try{
+  const l=Array.isArray(list)?list:CH();overrides(l);
+  const ac=[],al=[];Object.values(cfg.assign).forEach(o=>{if(o.cat)ac.push(o.cat);if(o.lang)al.push(o.lang)});
+  filterCategories=uniq([...filterCategories,...cfg.cats,...ac]).filter(x=>!cfg.hideCats.some(h=>low(h)===low(x)));
+  filterLanguages=uniq([...filterLanguages,...cfg.langs,...al]).filter(x=>!cfg.hideLangs.some(h=>low(h)===low(x)));
+  renderAutoFilterChips();
+ }catch(e){console.error(e)}
+};
+function applyAll(){
+ try{window.buildAutoFilters(CH())}catch(e){console.error(e)}
+ if(!tab(active.id)){active.id=cfg.tabs[0].id}
+ renderNav();renderFolders();draw();
+}
+const _rm=window.svReloadMapCfg;
+window.svReloadMapCfg=function(){if(_rm)try{_rm()}catch(e){}cfg=load();applyAll()};
+
+/* ---------- mini preview ---------- */
+let hlsP=null,pTok=0,pTimer=null;
+function kill(){clearTimeout(pTimer);if(hlsP){try{hlsP.destroy()}catch(e){}hlsP=null}const v=$('dmVid');if(v){v.onplaying=v.onerror=null;try{v.pause();v.removeAttribute('src');v.load()}catch(e){}}}
+function stopPrev(){pTok++;kill()}
+function startPrev(c,pl){
+ pl=pl||'';stopPrev();const v=$('dmVid'),st=$('dmPst');if(!v||!c||!c.url)return;
+ try{const iv=$('inlineVideo');iv&&iv.pause()}catch(e){}
+ if(pl==='external'){const s0=$('dmPst');if(s0){s0.className='';s0.textContent='ℹ️ External player — preview nahi'}return}
+ const cands=pl==='proxy'?[]:[c.url];
+ if(pl!=='native'&&pl!=='hlsjs'){try{getProxyModes().forEach(m=>{if(m.wrap)cands.push(m.wrap(c.url))})}catch(e){}}
+ if(!cands.length)cands.push(c.url);
+ let i=0;st.className='';st.textContent='⏳ Check ho raha hai…';
+ const next=()=>{i++;if(i<cands.length)go();else{st.className='bad';st.textContent='❌ Nahi chal raha'}};
+ function go(){
+  const att=++pTok;kill();let fin=false;
+  const done=g=>{if(att!==pTok||fin)return;fin=true;clearTimeout(pTimer);if(g){st.className='ok';st.textContent='✅ Chal raha hai'}else next()};
+  pTimer=setTimeout(()=>done(false),8000);
+  v.muted=true;
+  v.onplaying=()=>done(true);
+  try{
+   if(pl!=='native'&&typeof Hls!=='undefined'&&Hls.isSupported()&&(pl==='hlsjs'||pl==='proxy'||/m3u8|\/hls|\/live|\.php|\?/i.test(cands[i]))){
+    hlsP=new Hls();hlsP.on(Hls.Events.ERROR,(e,d)=>{if(d&&d.fatal)done(false)});hlsP.loadSource(cands[i]);hlsP.attachMedia(v);
+   }else{v.src=cands[i];v.onerror=()=>{if(v.currentSrc)done(false)}}
+   const p=v.play();if(p&&p.catch)p.catch(()=>{});
+  }catch(e){done(false)}
+ }
+ go();
+}
+
+/* ---------- manager UI ---------- */
+let sec='ch',selKey=null,q='';
+const body=()=>$('dmBody');
+const allCats=()=>uniq([...CH().map(chCat),...cfg.cats,...cfg.hideCats]);
+const allLangs=()=>uniq([...CH().map(chLang),...(typeof DEFAULT_FILTER_LANGUAGES!=='undefined'?DEFAULT_FILTER_LANGUAGES:[]),...cfg.langs,...cfg.hideLangs]);
+const opts=(arr,cur)=>'<option value="">(auto)</option>'+arr.map(v=>'<option'+(low(v)===low(cur)?' selected':'')+'>'+esc(v)+'</option>').join('');
+function folderTargets(){
+ const r=[];
+ cfg.tabs.forEach((t,ti)=>{
+  if(t.mode==='premium'||t.mode==='manual')r.push({ti,fi:-1,label:t.label+' (poori list)',o:t});
+  t.folders.forEach((f,fi)=>r.push({ti,fi,label:t.label+' › '+f.name,o:f}));
+ });
+ return r;
+}
+function renderCh(){
+ const list=CH();
+ const sel=list.find(c=>kOf(c)===selKey);
+ body().innerHTML='<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
+ +'<b id="dmName">'+(sel?esc(sel.name):'— channel list se chuno —')+'</b>'
+ +'<label>Category<select id="dmCat">'+opts(allCats(),sel?chCat(sel):'')+'</select></label>'
+ +'<label>Language<select id="dmLang">'+opts(allLangs(),sel?chLang(sel):'')+'</select></label>'
+ +'<label>🎬 Player (ye channel kis player se chale)<select id="dmPlayer">'+plOpts(sel&&cfg.assign[kOf(sel)]?cfg.assign[kOf(sel)].player:'')+'</select></label>'
+ +'<label class="dm-chk" style="font-size:15px;padding:8px 0"><input type="checkbox" id="dmShow" '+(!sel||!(cfg.assign[kOf(sel)]&&cfg.assign[kOf(sel)].show===false)?'checked':'')+'> Dashboard par ye channel dikhayein (Show / Hide)</label>'
+ +'<div id="dmFolds"></div>'
+ +'<div class="dm-row"><button id="dmSave">Save</button><button id="dmSaveNext" class="g">Save & Next</button><button id="dmReset" class="g">Reset</button></div></div></div>'
+ +'<details class="dm-card"><summary>⚡ Bulk: naam se sab channels ek saath</summary>'
+ +'<input id="dmKw" placeholder="Naam mein ye ho (jaise: zee, sony)"><select id="dmBCat"></select><select id="dmBLang"></select><select id="dmBPlayer"></select>'
+ +'<button id="dmBulk">Apply</button><small id="dmBN"></small></details>'
+ +'<input id="dmQ" placeholder="Channel search…" value="'+esc(q)+'" style="margin-bottom:8px"><div id="dmList"></div>';
+ $('dmBCat').innerHTML=opts(allCats(),'').replace('(auto)','Category (change nahi)');
+ $('dmBLang').innerHTML=opts(allLangs(),'').replace('(auto)','Language (change nahi)');
+ $('dmBPlayer').innerHTML='<option value="">Player (change nahi)</option>'+PLAYERS.map(p=>'<option value="'+(p[0]||'auto')+'">'+esc(p[1])+'</option>').join('');
+ drawFolds(sel);drawList();
+ if(sel)startPrev(sel,(cfg.assign[kOf(sel)]||{}).player||'');
+}
+function drawFolds(sel){
+ const box=$('dmFolds');if(!box)return;
+ const ft=folderTargets();
+ box.innerHTML=sel&&ft.length?'<div style="font-size:12px;color:#687386;margin-bottom:4px">Tab / Folder mein daalo</div>'+ft.map((x,i)=>{
+  const exp=x.o.keys.includes(kOf(sel)),auto=!exp&&inSet(sel,x.o);
+  return '<label class="dm-chk"><input type="checkbox" data-ft="'+i+'"'+(exp?' checked':'')+'>'+esc(x.label)+(auto?' <small>(naam se auto)</small>':'')+'</label>';
+ }).join(''):'';
+}
+function drawList(){
+ const box=$('dmList');if(!box)return;
+ const t=low(q);let l=CH().filter(c=>!t||low(c.name).includes(t)||low(chCat(c)).includes(t));
+ const n=l.length;l=l.slice(0,150);
+ box.innerHTML=l.map(c=>{const k=kOf(c),o=cfg.assign[k],hidden=!!(o&&o.show===false);return '<div class="dm-item'+(k===selKey?' sel':'')+'" data-k="'+esc(k)+'"><b>'+esc(c.name||'Channel')+'</b><small>'+esc(chCat(c)||'-')+' · '+esc(chLang(c)||'-')+' · '+(hidden?'🙈 Hidden':'👁️ Shown')+(o&&o.player?' · 🎬 '+esc(plName(o.player)):'')+'</small>'+(o?'<span>✏️</span>':'')+'</div>'}).join('')+(n>150?'<small>Pehle 150 dikh rahe hain ('+n+' mile) — search karein.</small>':'');
+}
+function saveChannel(next){
+ const c=CH().find(x=>kOf(x)===selKey);if(!c)return toast('Pehle channel chuno');
+ const cat=$('dmCat').value,lang=$('dmLang').value,k=kOf(c),show=$('dmShow').checked,player=$('dmPlayer').value;
+ const previous=cfg.assign[k]||{};
+ const updated={...previous,cat,lang,show,player};
+ if(cat||lang||!show||player)cfg.assign[k]=updated;else delete cfg.assign[k];
+ document.querySelectorAll('#dmFolds [data-ft]').forEach(cb=>{
+  const o=folderTargets()[+cb.dataset.ft].o,has=o.keys.includes(k);
+  if(cb.checked&&!has)o.keys.push(k);else if(!cb.checked&&has)o.keys=o.keys.filter(x=>x!==k);
+ });
+ save();applyAll();toast('✅ Save ho gaya'+(player?' · Player: '+plName(player):''));
+ if(next){
+  const t=low(q);const l=CH().filter(x=>!t||low(x.name).includes(t)||low(chCat(x)).includes(t));
+  const i=l.findIndex(x=>kOf(x)===k);const n=l[i+1];if(n){selKey=kOf(n)}
+ }
+ renderCh();
+}
+function renderLists(kind){
+ const isC=kind==='cat',names=isC?allCats():allLangs(),hid=isC?cfg.hideCats:cfg.hideLangs,cust=isC?cfg.cats:cfg.langs;
+ const cnt={};CH().forEach(c=>{const v=low(isC?chCat(c):chLang(c));cnt[v]=(cnt[v]||0)+1});
+ body().innerHTML='<div class="dm-card"><div class="dm-row"><input id="dmNew" placeholder="Naya '+(isC?'category':'language')+' naam" style="flex:1"><button id="dmAdd">+ Add</button></div></div>'
+ +names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+(h?';opacity:.5':'')+'"><b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' ch</small><button class="g sm" data-ren="'+i+'">✏️</button><button class="g sm" data-hid="'+i+'">'+(h?'Show':'Hide')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">🗑</button>':'')+'</div>'}).join('');
+ body().dataset.names=JSON.stringify(names);
+}
+function listAction(kind,e){
+ const isC=kind==='cat',names=JSON.parse(body().dataset.names||'[]');
+ const hid=isC?'hideCats':'hideLangs',cust=isC?'cats':'langs';
+ const add=e.target.closest('#dmAdd');
+ if(add){const v=cap($('dmNew').value.trim());if(!v)return;if(!cfg[cust].some(x=>low(x)===low(v)))cfg[cust].push(v);cfg[hid]=cfg[hid].filter(x=>low(x)!==low(v));save();applyAll();return renderLists(kind)}
+ const b=e.target.closest('button[data-ren],button[data-hid],button[data-del]');if(!b)return;
+ const n=names[+(b.dataset.ren??b.dataset.hid??b.dataset.del)];
+ if(b.dataset.hid!==undefined){const h=cfg[hid].some(x=>low(x)===low(n));cfg[hid]=h?cfg[hid].filter(x=>low(x)!==low(n)):[...cfg[hid],n]}
+ else if(b.dataset.del!==undefined){cfg[cust]=cfg[cust].filter(x=>low(x)!==low(n))}
+ else{
+  const nn=cap((prompt('Naya naam:',n)||'').trim());if(!nn||low(nn)===low(n))return;
+  CH().forEach(c=>{if(low(isC?chCat(c):chLang(c))===low(n)){const k=kOf(c),o=cfg.assign[k]||{cat:'',lang:''};o[isC?'cat':'lang']=nn;cfg.assign[k]=o}});
+  Object.values(cfg.assign).forEach(o=>{if(low(o[isC?'cat':'lang'])===low(n))o[isC?'cat':'lang']=nn});
+  if(!cfg[cust].some(x=>low(x)===low(nn)))cfg[cust].push(nn);
+  cfg[hid]=[...cfg[hid].filter(x=>low(x)!==low(n)),n];
+ }
+ save();applyAll();renderLists(kind);
+}
+function renderNavEd(){
+ body().innerHTML='<div class="dm-card"><small>Icon: emoji likho (🎬) ya preset: home / live / free / premium / trending. Mode: <b>All</b> = sab, <b>Free</b>, <b>Premium</b>, <b>Manual</b> = sirf keywords/channels jo aap chuno. Folder = tab ke andar brand (Zee, Sony). Keywords comma se alag.</small></div>'
+ +cfg.tabs.map((t,i)=>'<div class="dm-card" data-t="'+i+'"><div class="dm-row"><input data-f="icon" value="'+esc(t.icon)+'" style="width:84px"><input data-f="label" value="'+esc(t.label)+'" style="flex:1"></div>'
+ +'<select data-f="mode">'+['all','free','premium','manual'].map(m=>'<option value="'+m+'"'+(t.mode===m?' selected':'')+'>'+cap(m)+'</option>').join('')+'</select>'
+ +'<input data-f="match" placeholder="Keywords (zee, sony) — is tab mein auto aayenge" value="'+esc(t.match)+'">'
+ +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="🎬 / logo URL" style="width:100px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="delf">🗑</button></div>').join('')+'<button class="g sm" data-act="addf">+ Folder</button></div>'
+ +'<div class="dm-row"><button class="g sm" data-act="up">↑</button><button class="g sm" data-act="down">↓</button><button class="g sm" data-act="delt">🗑 Tab hatao</button></div></div>').join('')
+ +'<div class="dm-row"><button id="dmAddTab">+ Naya Tab</button><button id="dmDefTabs" class="g">Default tabs wapas</button></div>';
+}
+function navEvent(e){
+ if(e.target.id==='dmAddTab'){if(cfg.tabs.length>=7)return toast('Max 7 tabs');cfg.tabs.push({id:'t'+Date.now().toString(36),label:'New',icon:'⭐',mode:'manual',match:'',keys:[],folders:[]});save();applyAll();return renderNavEd()}
+ if(e.target.id==='dmDefTabs'){if(confirm('Default 5 tabs wapas?')){cfg.tabs=DEF().tabs;save();applyAll();renderNavEd()}return}
+ const card=e.target.closest('[data-t]');if(!card)return;const ti=+card.dataset.t,t=cfg.tabs[ti];
+ if(e.type==='change'||e.type==='input'){
+  const f=e.target.dataset.f,g=e.target.dataset.g;
+  if(f){t[f]=e.target.value}else if(g){const fo=t.folders[+e.target.closest('[data-fo]').dataset.fo];fo[g]=e.target.value}else return;
+  save();if(e.type==='change'){applyAll();if(f==='mode')renderNavEd()}return;
+ }
+ const act=e.target.dataset.act;if(!act)return;
+ if(act==='addf')t.folders.push({name:'Folder',icon:'📁',match:'',keys:[]});
+ else if(act==='delf')t.folders.splice(+e.target.closest('[data-fo]').dataset.fo,1);
+ else if(act==='up'&&ti>0)[cfg.tabs[ti-1],cfg.tabs[ti]]=[cfg.tabs[ti],cfg.tabs[ti-1]];
+ else if(act==='down'&&ti<cfg.tabs.length-1)[cfg.tabs[ti+1],cfg.tabs[ti]]=[cfg.tabs[ti],cfg.tabs[ti+1]];
+ else if(act==='delt'){if(cfg.tabs.length<2)return toast('Kam se kam 1 tab');cfg.tabs.splice(ti,1)}
+ active.folder=null;save();applyAll();renderNavEd();
+}
+function render(){stopPrev();document.querySelectorAll('#dmSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===sec));
+ if(sec==='ch')renderCh();else if(sec==='nav')renderNavEd();else renderLists(sec)}
+$('dmSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sec=b.dataset.s;render()});
+body().addEventListener('click',e=>{
+ if(sec==='ch'){
+  const it=e.target.closest('.dm-item');
+  if(it){selKey=it.dataset.k;renderCh();return}
+  if(e.target.id==='dmSave')return saveChannel(false);
+  if(e.target.id==='dmSaveNext')return saveChannel(true);
+  if(e.target.id==='dmReset'){if(selKey){delete cfg.assign[selKey];save();applyAll();renderCh();toast('Category, language, player aur Show setting reset ho gayi')}return}
+  if(e.target.id==='dmBulk'){
+   const kw=low($('dmKw').value).split(',').map(s=>s.trim()).filter(Boolean),cat=$('dmBCat').value,lang=$('dmBLang').value,bpl=$('dmBPlayer').value;
+   if(!kw.length||(!cat&&!lang&&!bpl))return toast('Keyword + category/language/player chuno');
+   let n=0;CH().forEach(c=>{if(kw.some(w=>low(c.name).includes(w))){const k=kOf(c),o=cfg.assign[k]||{cat:'',lang:''};if(cat)o.cat=cat;if(lang)o.lang=lang;if(bpl)o.player=bpl==='auto'?'':bpl;cfg.assign[k]=o;n++}});
+   save();applyAll();toast('✅ '+n+' channels update');renderCh();
+  }
+ }else if(sec==='nav')navEvent(e);else listAction(sec,e);
+});
+body().addEventListener('input',e=>{
+ if(sec==='ch'){
+  if(e.target.id==='dmQ'){q=e.target.value;drawList()}
+  if(e.target.id==='dmKw'){const kw=low(e.target.value).split(',').map(s=>s.trim()).filter(Boolean);$('dmBN').textContent=kw.length?CH().filter(c=>kw.some(w=>low(c.name).includes(w))).length+' channels match':''}
+ }else if(sec==='nav')navEvent(e);
+});
+body().addEventListener('change',e=>{
+ if(sec==='nav')navEvent(e);
+ else if(sec==='ch'&&e.target.id==='dmPlayer'){const c=CH().find(x=>kOf(x)===selKey);if(c)startPrev(c,e.target.value)}
+});
+$('dmBack').onclick=()=>{stopPrev();$('dmPage').style.display='none'};
+function open(){$('dmPage').style.display='flex';render()}
+const sp=$('settingsPage');
+if(sp){const it=document.createElement('div');it.className='settings-item';it.innerHTML='<div class="settings-item-left">🎛️ Dashboard Manager (Tabs, Category, Language)</div><div class="settings-item-right">Open ›</div>';it.addEventListener('click',open);const l=sp.querySelector('.settings-list');if(l)l.insertBefore(it,l.firstChild)}
+
+/* ---------- start ---------- */
+renderNav();renderFolders();
+setTimeout(()=>{if(CH().length)applyAll()},400);
+window.svDash={refresh:applyAll,open};
+})();
+</script>
+<!-- ===== /SanTV Dashboard Manager ===== -->
 
 </body>
 </html>
