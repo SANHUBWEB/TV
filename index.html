@@ -1494,6 +1494,20 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (marathiNames.some(x => n.includes(x))) language = 'marathi';
             }
 
+            // Well-known Hindi networks when the playlist has no language tag.
+            if (!language) {
+                const hindiNames = [
+                    'zee tv','zee cinema','zee cine','zee classic','zee anmol','zee bollywood','zee news','zee hindustan','zee business',
+                    '&tv','&pictures','&flix','and tv','and pictures','star plus','star bharat','star gold','star utsav','star utsav movies','star sports hindi',
+                    'sony sab','sony max','sony pal','sony entertainment','sony set','sab tv','colors tv','colors cineplex','colors hindi','rishtey',
+                    'aaj tak','india today','ndtv india','abp news','india tv','news18 india','news18 hindi','republic bharat','tv9 bharatvarsh','news nation',
+                    'news24','news 24','dd national','dd india','dd news','dd bharati','b4u','9xm','dangal','goldmines','manoranjan','sony wah','shemaroo',
+                    'big magic','enterr10','epic','pitaara','nick hindi','sony yay','hungama','zing','mtv beats','mastiii','bindass','zoom','lok sabha','sansad hindi',
+                    'bhaktisagar','sanskar','aastha','sadhna','ishwar','vedic','rajya sabha','cartoon network hindi','pogo','discovery jeet','sony aath'
+                ];
+                if (hindiNames.some(x => n.includes(x))) language = 'hindi';
+            }
+
             return { category, language };
         }
 
@@ -3917,7 +3931,7 @@ function restrict(){
  // Once the user starts assigning categories in Dashboard Manager, show only categorized channels
  // in the main channel list/player channel navigation. Unassigned channels remain editable in Manager.
  const anyAssignedCategoryOrLanguage=CH().some(c=>{const a=cfg.assign[kOf(c)];return !!(a&&(String(a.cat||'').trim()||String(a.lang||'').trim()))});
- if(anyAssignedCategoryOrLanguage)b=b.filter(c=>{const a=cfg.assign[kOf(c)];return !!(a&&String(a.cat||'').trim()&&String(a.lang||'').trim())});
+ /* FIX: unassigned channels stay visible (auto category/language still applies). */
  // Per-channel Show/Hide setting applies everywhere. Hidden channels remain editable in Manager.
  return b.filter(c=>!(cfg.assign[kOf(c)]&&cfg.assign[kOf(c)].show===false));
 }
