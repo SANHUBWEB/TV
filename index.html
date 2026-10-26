@@ -452,6 +452,23 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 .empty-state small { display: block; margin-top: 6px; overflow-wrap: anywhere; color: #b42318; }
 .empty-state button { margin-top: 14px; padding: 10px 20px; border: 0; border-radius: 24px; background: #d72f48; color: #fff; font-weight: 700; cursor: pointer; }
 
+
+/* SanTV compact mobile layout: tighter channel rows and a tidy filter toolbar */
+@media (max-width: 600px) {
+  .chips-container { gap: 7px !important; padding: 7px 12px !important; }
+  .chips-container .chip { min-height: 38px; padding: 7px 12px !important; font-size: 13px !important; gap: 6px; white-space: nowrap; }
+  #openFilterBtn { max-width: 52vw; overflow: hidden; text-overflow: ellipsis; }
+  #openFilterBtn svg { width: 16px; height: 16px; flex: 0 0 16px; }
+  .channel-list { gap: 7px !important; padding: 8px 12px calc(100px + env(safe-area-inset-bottom, 0px)) !important; }
+  .channel-item { padding: 8px !important; gap: 9px !important; border-radius: 14px !important; min-height: 78px; }
+  .channel-logo-box { width: 44px !important; height: 44px !important; flex: 0 0 44px !important; border-radius: 12px !important; }
+  .program-thumb { width: 44px !important; height: 44px !important; flex: 0 0 44px !important; border-radius: 12px !important; }
+  .channel-item .program-info { min-width: 0; }
+  .channel-item .program-info h3, .channel-item .program-info .channel-name { font-size: 15px !important; line-height: 1.25 !important; }
+  .channel-item .program-info p { font-size: 12px !important; line-height: 1.3 !important; margin-top: 3px !important; }
+  .channel-item .fav-btn { width: 30px !important; height: 30px !important; flex: 0 0 30px !important; }
+}
+
 /* ---------- phones (<=600): player pinned on top, list scrolls beneath, filters in an overlay ---------- */
 @media (max-width: 600px) {
   :root { --sv-header-h: 60px; }
@@ -530,6 +547,41 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 }
 @media (min-width: 601px) and (max-height: 640px) { #filterPage .filter-content { max-height: 22dvh; } }
 @media (prefers-reduced-motion: reduce) { .app-main { scroll-behavior: auto; } }
+
+/* SanTV UI/UX scale controls + immersive in-app player */
+:root { --sv-app-font-scale:1; --sv-app-layout-scale:1; --sv-player-ui-scale:1; }
+.app-title { font-size:calc(22px * var(--sv-app-font-scale)) !important; }
+.program-details h4, .program-info h4, .settings-title, .search-section-title { font-size:calc(1em * var(--sv-app-font-scale)); }
+.program-details p, .program-info p, .nav-item, .chip, .filter-chip, .display-option { font-size:calc(1em * var(--sv-app-font-scale)); }
+.channel-item { padding:calc(12px * var(--sv-app-layout-scale)) !important; gap:calc(14px * var(--sv-app-layout-scale)) !important; border-radius:calc(16px * var(--sv-app-layout-scale)) !important; }
+.channel-list { gap:calc(12px * var(--sv-app-layout-scale)) !important; }
+.chips-container { gap:calc(10px * var(--sv-app-layout-scale)) !important; }
+.ui-slider-head { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#7b8494; font-size:12px; margin:4px 0 10px; }
+.ui-slider-head strong { color:#c92742; background:#fff0f2; border:1px solid #f4c4cc; padding:5px 10px; border-radius:999px; font-size:13px; min-width:58px; text-align:center; }
+.ui-size-slider { appearance:none; -webkit-appearance:none; display:block; width:100%; height:7px; border-radius:99px; background:linear-gradient(90deg,#d72f48,#f5a2af); outline:none; margin:12px 0; touch-action:pan-y; }
+.ui-size-slider::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#fff; border:3px solid #d72f48; box-shadow:0 2px 7px #d72f4838; }
+.ui-size-slider::-moz-range-thumb { width:17px; height:17px; border-radius:50%; background:#fff; border:3px solid #d72f48; box-shadow:0 2px 7px #d72f4838; }
+.ui-scale-card { padding:16px !important; }
+#player-screen { position:fixed !important; inset:0 !important; width:100vw !important; width:100dvw !important; height:100vh !important; height:100dvh !important; max-width:none !important; margin:0 !important; border-radius:0 !important; padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px); background:#000 !important; z-index:2147483000 !important; }
+#player-screen .pl-stage { padding-top:calc(16 * var(--u) * var(--sv-player-ui-scale)); padding-bottom:calc(16 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-title { font-size:calc(21 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-sub { font-size:calc(14 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-act { width:calc(30 * var(--u) * var(--sv-player-ui-scale)); height:calc(30 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-play { width:calc(46 * var(--u) * var(--sv-player-ui-scale)); height:calc(46 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-skip { width:calc(36 * var(--u) * var(--sv-player-ui-scale)); height:calc(36 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-tile { flex-basis:calc(108 * var(--u) * var(--sv-player-ui-scale)); height:calc(64 * var(--u) * var(--sv-player-ui-scale)); font-size:calc(13 * var(--u) * var(--sv-player-ui-scale)); }
+#player-screen .pl-time { font-size:calc(16 * var(--u) * var(--sv-player-ui-scale)); }
+@media (max-width:600px) { .ui-scale-card { padding:14px !important; } .app-title { font-size:calc(20px * var(--sv-app-font-scale)) !important; } }
+</style>
+<style id="svPlayerCompact">
+/* Player: 30s skip buttons removed; CH, top icons and channel tiles made smaller */
+#plBack30,#plFwd30{display:none!important}
+#player-screen .pl-ch{font-size:calc(18*var(--u)*var(--sv-player-ui-scale,1))!important}
+#player-screen .pl-ch svg{width:calc(14*var(--u)*var(--sv-player-ui-scale,1))!important;height:calc(21*var(--u)*var(--sv-player-ui-scale,1))!important}
+#player-screen .pl-act{width:calc(22*var(--u)*var(--sv-player-ui-scale,1))!important;height:calc(22*var(--u)*var(--sv-player-ui-scale,1))!important}
+#player-screen .pl-actions{gap:calc(24*var(--u))!important}
+#player-screen .pl-tile{flex-basis:calc(78*var(--u)*var(--sv-player-ui-scale,1))!important;height:calc(46*var(--u)*var(--sv-player-ui-scale,1))!important;font-size:calc(11*var(--u)*var(--sv-player-ui-scale,1))!important;border-radius:calc(11*var(--u))!important}
+#player-screen.portrait .pl-tile{flex:0 0 calc((100% - 16*var(--u)) / 3)!important;height:calc(56*var(--u))!important}
 </style>
 </head>
 <body>
@@ -563,7 +615,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         <section class="player-col" aria-label="Video player">
             <div class="carousel-wrapper">
                 <div class="carousel-container" id="carousel">
-            <div class="carousel-card"><div class="card-image" id="inlinePlayerBox"><video id="inlineVideo" playsinline webkit-playsinline autoplay muted preload="auto"></video><button class="inline-expand-btn" id="inlineExpandBtn" type="button" aria-label="Expand player" title="Full-screen player">⛶</button><div id="deskControls" role="group" aria-label="Player controls"><button type="button" id="dcPrev" aria-label="Previous channel" title="Previous channel">⏮</button><button type="button" id="dcPlay" aria-label="Play or pause" title="Play / pause">⏯</button><button type="button" id="dcNext" aria-label="Next channel" title="Next channel">⏭</button><button type="button" id="dcMute" aria-label="Mute or unmute" title="Mute / unmute">🔇</button></div><div id="inlinePlayerOverlay"><span id="inlinePlayerHint">Starting live TV automatically…</span><button class="retry-btn" id="inlineRetryBtn" type="button" style="display:none;">Retry</button></div></div><div class="card-info"><div class="channel-logo-small" id="inlineChannelLogo">TV</div><div class="program-details"><h4 id="inlineChannelName">Live TV</h4><p id="inlineChannelTime">Auto player • Ready to watch</p><p id="inlineChannelStatus" class="play-status" role="status" aria-live="polite"></p></div></div></div>
+            <div class="carousel-card"><div class="card-image" id="inlinePlayerBox"><video id="inlineVideo" playsinline webkit-playsinline autoplay muted preload="auto"></video><button class="inline-expand-btn" id="inlineExpandBtn" type="button" aria-label="Full screen" title="Full screen (F)">⛶</button><div id="deskControls" role="group" aria-label="Player controls"><button type="button" id="dcPrev" aria-label="Previous channel" title="Previous channel">⏮</button><button type="button" id="dcPlay" aria-label="Play or pause" title="Play / pause">⏯</button><button type="button" id="dcNext" aria-label="Next channel" title="Next channel">⏭</button><button type="button" id="dcMute" aria-label="Mute or unmute" title="Mute / unmute">🔇</button></div><div id="inlinePlayerOverlay"><span id="inlinePlayerHint">Starting live TV automatically…</span><button class="retry-btn" id="inlineRetryBtn" type="button" style="display:none;">Retry</button></div></div><div class="card-info"><div class="channel-logo-small" id="inlineChannelLogo">TV</div><div class="program-details"><h4 id="inlineChannelName">Live TV</h4><p id="inlineChannelTime">Auto player • Ready to watch</p><p id="inlineChannelStatus" class="play-status" role="status" aria-live="polite"></p></div></div></div>
                 </div>
             </div>
         </section>
@@ -669,7 +721,28 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                     <button class="display-option" data-value="169">16:9</button>
                     <button class="display-option" data-value="43">4:3</button>
                 </div>
-                <div class="display-help">Fit keeps the complete picture. Full fills the screen and may crop the sides/top. Stretch fills the box without preserving the source ratio.</div>
+                <div class="display-help">Fit keeps the complete picture. Full fills the screen and may crop the sides/top. Stretch fills the box without preserving the source ratio. Full screen button ya F key dabane par browser ke bars chhup jaate hain (jahan browser support kare).</div>
+            </div>
+
+            <div class="display-setting-card ui-scale-card">
+                <div class="display-setting-title">🔠 App Text Size</div>
+                <div class="ui-slider-head"><span>Small</span><strong id="appFontScaleValue">100%</strong><span>Large</span></div>
+                <input class="ui-size-slider" id="appFontScale" type="range" min="85" max="125" step="5" value="100" aria-label="App text size">
+                <div class="display-help">App ke headings, channel names, buttons aur navigation ka text chhota/bada karein.</div>
+            </div>
+
+            <div class="display-setting-card ui-scale-card">
+                <div class="display-setting-title">🧩 App Layout Size</div>
+                <div class="ui-slider-head"><span>Compact</span><strong id="appLayoutScaleValue">100%</strong><span>Roomy</span></div>
+                <input class="ui-size-slider" id="appLayoutScale" type="range" min="85" max="120" step="5" value="100" aria-label="App layout size">
+                <div class="display-help">Channel cards, gaps aur padding ko compact ya spacious banayein.</div>
+            </div>
+
+            <div class="display-setting-card ui-scale-card">
+                <div class="display-setting-title">🎮 Full-screen Player Controls</div>
+                <div class="ui-slider-head"><span>Small</span><strong id="playerUiScaleValue">100%</strong><span>Large</span></div>
+                <input class="ui-size-slider" id="playerUiScale" type="range" min="80" max="125" step="5" value="100" aria-label="Player control size">
+                <div class="display-help">Full-screen player ke buttons, channel title aur controls ka size badlein. Video screen ke andar hi rahega.</div>
             </div>
 
             <div class="display-setting-card">
@@ -1014,7 +1087,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 item.innerHTML = `
                     <div class="channel-logo-box">${logo ? `<img src="${logo}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.style.display='none'">` : `<div class="channel-logo-text">${logoText}</div>`}</div>
                     <div class="program-thumb" aria-hidden="true"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.7;">${watched ? '✓' : '▶'}</div></div>
-                    <div class="program-info"><h4>${escapeHtml(channel.name)}</h4><p>${escapeHtml(meta || channel.time || 'Live TV | Tap to watch')}${channelStatusBadge(channel)}</p></div>
+                    <div class="program-info"><h4>${channel.svNum ? '<span class="sv-chnum">' + channel.svNum + '</span>' : ''}${escapeHtml(channel.name)}</h4><p>${escapeHtml(meta || channel.time || 'Live TV | Tap to watch')}${channelStatusBadge(channel)}</p></div>
                     <button type="button" class="fav-btn" aria-pressed="${favourite}" aria-label="${favourite ? 'Remove from' : 'Add to'} favourites: ${escapeHtml(channel.name)}" title="${favourite ? 'Remove from favourites' : 'Add to favourites'}">${favourite ? '♥' : '♡'}</button>
                 `;
                 item.addEventListener('click', () => {
@@ -1297,7 +1370,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                         new RegExp('(?:^|\\s)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:$|\\s)', 'i').test(hay));
                 });
 
-                if (!(categoryOK && languageOK)) return false;
+                const svCatOK = (c.svCat && cats.length) ? cats.some(f => String(c.svCat).toLowerCase().trim() === f) : categoryOK;
+                if (c.svHide) return false;
+                if (!(svCatOK && languageOK)) return false;
 
                 const key = channelKey(c);
                 if (quick.watched && !watchedChannels.has(key)) return false;
@@ -1310,11 +1385,17 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         function updateFilterLabel() {
             const btn = document.getElementById('openFilterBtn');
             if (!btn) return;
-            const count = getActiveFilters().filter(x => x !== 'all').length;
+            const activeCategory = document.querySelector('#categoryFilterChips .filter-chip.active');
+            const categoryName = (activeCategory?.dataset.value || activeCategory?.textContent || 'All').trim();
+            const activeLanguages = [...document.querySelectorAll('#languageFilterChips .filter-chip.active')]
+                .map(x => (x.dataset.value || x.textContent).trim()).filter(x => x.toLowerCase() !== 'all');
+            const label = categoryName.toLowerCase() === 'all' ? 'Category' : categoryName;
             const svg = btn.querySelector('svg');
             btn.innerHTML = '';
             if (svg) btn.appendChild(svg);
-            btn.appendChild(document.createTextNode(` Filters (${count ? count : 'All'})`));
+            btn.appendChild(document.createTextNode(` ${label}${activeLanguages.length ? ' · ' + activeLanguages.join(', ') : ''}`));
+            btn.title = `Selected category: ${categoryName}`;
+            btn.setAttribute('aria-label', `Open filters. Selected category: ${categoryName}`);
         }
 
         // ================= M3U PARSER =================
@@ -2008,7 +2089,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             const current = currentChannelObj();
             const key = channelCategoryKey(current);
             if (!key) return filteredChannels.length ? filteredChannels : channels;
-            const scoped = channels.filter(c => channelCategoryKey(c) === key);
+            const scoped = channels.filter(c => channelCategoryKey(c) === key && !c.svHide);
             return scoped.length ? scoped : (filteredChannels.length ? filteredChannels : channels);
         }
         function layoutPlayer() {
@@ -2197,10 +2278,22 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         ['resize', 'orientationchange'].forEach(ev => window.addEventListener(ev, onOrient));
 
         // Keep playback inline on mobile/portrait. Do not open a separate/fullscreen player.
+        // Full screen = real browser full screen (browser bars hidden), same as the F key.
+        window.svToggleFs = function () {
+            if (document.fullscreenElement || document.webkitFullscreenElement) { closeExpandedPlayer(); return; }
+            if (!plOpen) { if (!currentStreamUrl) return; openExpandedPlayer(false); }
+            const req = playerScreen.requestFullscreen || playerScreen.webkitRequestFullscreen;
+            if (!req) return; // browsers without the Fullscreen API (iPhone) keep the in-app player
+            try {
+                plFs = true;
+                const r = req.call(playerScreen);
+                if (r && r.catch) r.catch(() => { plFs = false; });
+            } catch (_) { plFs = false; }
+        };
         $('inlineExpandBtn')?.addEventListener('click', e => {
             e.preventDefault();
             e.stopPropagation();
-            openExpandedPlayer(false);
+            window.svToggleFs();
         });
         $('closePlayerBtn').addEventListener('click', closeExpandedPlayer);
         $('plExitBtn').addEventListener('click', closeExpandedPlayer);
@@ -2275,6 +2368,18 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             currentChannelIndex = channels.findIndex(c => String(c.url || '') === String(channel.url || ''));
             playChannel(channel.name, channel.url, channel.time || 'Live Now');
         }
+
+        // TV remote only: Left = previous channel, Right = next channel.
+        document.addEventListener('keydown', function(e) {
+            if (document.documentElement.dataset.device !== 'tv') return;
+            const el = e.target;
+            if (el && (el.matches('input, textarea, select') || el.isContentEditable)) return;
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            e.preventDefault();
+            e.stopPropagation();
+            playAdjacentChannel(e.key === 'ArrowLeft' ? -1 : 1);
+            if (inlineVideo) inlineVideo.muted = false;
+        }, true);
 
         // Horizontal swipe ONLY on the black video area:
         // left = next channel, right = previous channel.
@@ -2572,12 +2677,42 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         const saveDisplaySettingsBtn = document.getElementById('saveDisplaySettingsBtn');
         const displaySettingsStatus = document.getElementById('displaySettingsStatus');
         const dolbyAtmosToggle = document.getElementById('dolbyAtmosToggle');
+        const appFontScaleInput = document.getElementById('appFontScale');
+        const appLayoutScaleInput = document.getElementById('appLayoutScale');
+        const playerUiScaleInput = document.getElementById('playerUiScale');
+        const scaleControls = [
+            [appFontScaleInput, 'appFontScale', 'appFontScaleValue', 100],
+            [appLayoutScaleInput, 'appLayoutScale', 'appLayoutScaleValue', 100],
+            [playerUiScaleInput, 'playerUiScale', 'playerUiScaleValue', 100]
+        ];
+        function applyUiScales() {
+            const font = Number(displaySettings.appFontScale || 100);
+            const layout = Number(displaySettings.appLayoutScale || 100);
+            const player = Number(displaySettings.playerUiScale || 100);
+            document.documentElement.style.setProperty('--sv-app-font-scale', String(font / 100));
+            document.documentElement.style.setProperty('--sv-app-layout-scale', String(layout / 100));
+            document.documentElement.style.setProperty('--sv-player-ui-scale', String(player / 100));
+            scaleControls.forEach(([input, key, label, fallback]) => {
+                if (!input) return;
+                input.value = String(displaySettings[key] || fallback);
+                const out = document.getElementById(label); if (out) out.textContent = input.value + '%';
+            });
+            if (plOpen) layoutPlayer();
+        }
+        scaleControls.forEach(([input, key, label]) => input?.addEventListener('input', () => {
+            displaySettings[key] = Number(input.value);
+            const out = document.getElementById(label); if (out) out.textContent = input.value + '%';
+            applyUiScales();
+        }));
 
         const defaultDisplaySettings = {
             rotate: 'auto',
             quality: 'standard',
             ratio: 'fit',
-            atmos: false
+            atmos: false,
+            appFontScale: 100,
+            appLayoutScale: 100,
+            playerUiScale: 100
         };
         let displaySettings = {...defaultDisplaySettings};
 
@@ -2607,6 +2742,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             playerScreen.classList.add('display-' + q, 'ratio-' + r);
 
             dolbyAtmosToggle.checked = !!displaySettings.atmos;
+            applyUiScales();
             setOptionGroup('rotateOptions', displaySettings.rotate);
             setOptionGroup('displayQualityOptions', displaySettings.quality);
             setOptionGroup('screenRatioOptions', displaySettings.ratio);
@@ -2645,6 +2781,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             displaySettings.quality = active('displayQualityOptions') || 'standard';
             displaySettings.ratio = active('screenRatioOptions') || 'fit';
             displaySettings.atmos = !!dolbyAtmosToggle.checked;
+            scaleControls.forEach(([input, key]) => { if (input) displaySettings[key] = Number(input.value || 100); });
         }
 
         loadDisplaySettings();
@@ -3112,5 +3249,188 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 })();
 </script>
 
+
+<script>
+/* SanTV: laptop keyboard channel controls; touch/mobile controls remain unchanged. */
+(function(){
+  document.addEventListener('keydown', function(e){
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    const t=e.target;
+    if (t && (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName))) return;
+    const video=document.getElementById('inlineVideo');
+    if (!video) return;
+    if (e.key==='ArrowRight' || e.key==='PageDown' || e.key.toLowerCase()==='d') {
+      e.preventDefault();
+      if (typeof window.playAdjacentChannel==='function') window.playAdjacentChannel(1);
+      video.muted=false;
+    } else if (e.key==='ArrowLeft' || e.key==='PageUp' || e.key.toLowerCase()==='a') {
+      e.preventDefault();
+      if (typeof window.playAdjacentChannel==='function') window.playAdjacentChannel(-1);
+      video.muted=false;
+    }
+  });
+})();
+</script>
+
+
+<!-- SanTV category-wise channel numbers and category merge -->
+<style>#svMapPage{position:fixed;inset:0;z-index:9000;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svMapPage input,#svMapPage select{padding:10px;border:1px solid #ccd3df;border-radius:9px;max-width:100%;background:white;color:#172033}#svMapPage input[type=checkbox]{width:20px;height:20px;padding:0;vertical-align:middle;margin-right:8px}#svMapPage button{padding:10px 14px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700}#svMapPage label{display:block;margin:8px 0}#svMapPage .sv-grey{background:#e9edf4;color:#172033}#svMapRows,#svCatNums,#svDupes{display:grid;gap:8px;margin:10px 0}.sv-maprow,.sv-card{display:grid;grid-template-columns:1fr 82px;gap:8px;align-items:center;padding:10px;background:white;border:1px solid #e1e6ee;border-radius:12px}.sv-card{display:flex;justify-content:space-between}.sv-maprow small{display:block;color:#687386;margin-top:3px}.sv-chnum{display:inline-block;min-width:22px;padding:1px 6px;margin-right:6px;border-radius:6px;background:#b02b3d;color:#fff;font:700 11px system-ui;text-align:center;vertical-align:middle}#svNumToast{position:fixed;z-index:99999;top:8%;left:50%;transform:translateX(-50%);background:#111;color:#fff;border:2px solid #b02b3d;border-radius:14px;padding:14px 20px;font:700 24px system-ui;display:none;max-width:90vw;text-align:center}</style>
+<div id="svMapPage"><div style="display:flex;align-items:center;gap:12px"><button id="svMapBack">← Back</button><h2 style="margin:8px 0">Channel Numbers & Category Merge</h2></div>
+<h3>Auto channel numbers</h3>
+<label><input type="checkbox" id="svAutoNum">Auto channel numbers: poori playlist 1 se total tak (category ek ke baad ek)</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="svRenumber">Renumber now</button><button id="svClearNums" class="sv-grey">Manual numbers clear</button></div>
+<div id="svCatNums"></div>
+<h3>Sirf working channels</h3>
+<label><input type="checkbox" id="svOnlyOk">Dashboard par sirf reachable channels dikhao (jo chalte nahi / http-blocked / error wale hide)</label>
+<label><input type="checkbox" id="svStrict">Strict: jinka test confirm nahi hua (unverified) wo bhi hide</label>
+<small id="svHideInfo"></small>
+<h3>Category merge</h3>
+<label><input type="checkbox" id="svAutoMerge">Duplicate category names auto merge (Movie / MOVIES / Movies HD → Movies)</label>
+<div id="svDupes"></div><button id="svMergeAll">Merge all duplicates</button>
+<p>Manual merge: Original category ko dusre folder mein merge karein.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="svMergeFrom" list="svCategoryOptions" placeholder="Original category"><datalist id="svCategoryOptions"></datalist><input id="svMergeTo" list="svCategoryOptions" placeholder="Folder name (Movies)"><button id="svMergeAdd">Add merge</button></div>
+<div id="svMergeRows" style="display:grid;gap:8px;margin:12px 0"></div>
+<details id="svManualBox" style="margin:10px 0"><summary><b>Manual number (advanced)</b></summary><p>Kisi channel ko apna number dena ho to yahan likhein.</p><input id="svMapSearch" placeholder="Channel search karein..." style="width:100%;box-sizing:border-box"><div id="svMapRows"></div></details>
+<button id="svMapSave">Save settings</button><p id="svMapStatus" aria-live="polite"></p></div><div id="svNumToast"></div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const NUMKEY='santv_custom_channel_numbers_v1',MERGEKEY='santv_category_merges_v1',CFGKEY='santv_numcfg_v2';
+ const load=(k,d)=>{try{return Object.assign(d,JSON.parse(localStorage.getItem(k)||'{}'))}catch(e){return d}};
+ let nums=load(NUMKEY,{}),merges=load(MERGEKEY,{}),cfg=load(CFGKEY,{autoNum:true,autoMerge:true,onlyOk:true,strict:false});
+ const persist=()=>{try{localStorage.setItem(NUMKEY,JSON.stringify(nums));localStorage.setItem(MERGEKEY,JSON.stringify(merges));localStorage.setItem(CFGKEY,JSON.stringify(cfg));return true}catch(e){return false}};
+ const clean=s=>String(s||'').trim().toLowerCase();
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const allCh=()=>Array.isArray(window.channels)?window.channels:((typeof channels!=='undefined'&&Array.isArray(channels))?channels:[]);
+ const chKey=c=>String(c.url||c.name||'').trim();
+ const LANGS=new Set('assamese bengali bangla bhojpuri english french gujarati hindi kannada malayalam marathi nepali odia punjabi tamil telugu urdu'.split(' '));
+ const NOISE=new Set('hd sd fhd uhd 4k channel channels tv live'.split(' '));
+ const SYN={movie:'movie',movies:'movie',film:'movie',films:'movie'};
+ // Same key = same category (case, spaces, symbols, plural, HD/SD/TV words and Movie/Film are ignored).
+ function catKey(s){
+  let w=clean(s).replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean);
+  const f=w.filter(x=>!NOISE.has(x));if(f.length)w=f;
+  return w.map(x=>SYN[x]||(x.length>4&&/s$/.test(x)&&!/ss$/.test(x)&&x!=='news'?x.slice(0,-1):x)).join('');
+ }
+ function pickBase(c){
+  const segs=String(c.svOrigGroup||'').split(/[;,|]/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+  return segs.find(x=>!LANGS.has(clean(x)))||segs[0]||String(c.svOrigCat||'').trim()||'Uncategorized';
+ }
+ // Gives every channel ONE category (svCat) and a number inside it (svNum).
+ function apply(list){
+  list=list||allCh();if(!list.length)return;
+  const rows=list.map(c=>{if(c.svOrigGroup===undefined){c.svOrigGroup=c.group||'';c.svOrigCat=c.filterCategory||''}return{c,base:pickBase(c)}});
+  const man=new Map(Object.entries(merges).map(([f,t])=>[clean(f),String(t).trim()]));
+  const votes=new Map();
+  rows.forEach(r=>{const k=catKey(r.base);let v=votes.get(k);if(!v){v=new Map();votes.set(k,v)}v.set(r.base,(v.get(r.base)||0)+1)});
+  const best=new Map(),dupes=[];
+  votes.forEach((v,k)=>{const a=[...v.entries()].sort((x,y)=>y[1]-x[1]);best.set(k,a[0][0]);if(a.length>1)dupes.push({label:a[0][0],variants:a.map(x=>x[0])})});
+  const canon=new Map(),groups=new Map();
+  rows.forEach(r=>{
+   let lab=man.get(clean(r.base))||(cfg.autoMerge?best.get(catKey(r.base)):r.base);
+   const ck=clean(lab);if(!canon.has(ck))canon.set(ck,lab);lab=canon.get(ck);
+   r.c.svCat=lab;r.c.group=lab;r.c.filterCategory=lab;
+   if(!groups.has(ck))groups.set(ck,[]);groups.get(ck).push(r.c);
+  });
+  // Channels that failed Auto-Tune (not found / http-blocked / network error / unsupported) are hidden.
+  const BAD=new Set(['unavailable','mixed','network','invalid','unsupported']);if(cfg.strict)BAD.add('unverified');
+  const stt=window.svChannelStatus||{};
+  list.forEach(c=>{c.svHide=!!(cfg.onlyOk&&BAD.has(stt[chKey(c)]))});
+  if(list.length&&list.every(c=>c.svHide))list.forEach(c=>{c.svHide=false}); // never leave the dashboard empty
+  // One category after another, so numbers run 1..total over the whole playlist.
+  if(cfg.autoNum){const flat=[].concat(...groups.values());if(flat.length===list.length)for(let i=0;i<flat.length;i++)list[i]=flat[i]}
+  const used=new Set(list.filter(c=>!c.svHide).map(c=>Number(nums[chKey(c)])).filter(Boolean));let n=0;
+  list.forEach(c=>{if(c.svHide){c.svNum=0;return}const m=Number(nums[chKey(c)])||0;if(m)c.svNum=m;else if(cfg.autoNum){do{n++}while(used.has(n));c.svNum=n}else c.svNum=0});
+  const stats=[];
+  groups.forEach(mem=>{const vis=mem.filter(c=>!c.svHide);if(!vis.length)return;const v=vis.map(c=>c.svNum).filter(Boolean);stats.push({name:mem[0].svCat,count:vis.length,min:v.length?v.reduce((a,b)=>Math.min(a,b)):0,max:v.length?v.reduce((a,b)=>Math.max(a,b)):0})});
+  stats.sort((a,b)=>(a.min-b.min)||(b.count-a.count));
+  window.svHidden=list.filter(c=>c.svHide).length;window.svTotal=list.length-window.svHidden;
+  window.svCatStats=stats;window.svDupes=dupes;window.svRawCats=[...new Set(rows.map(r=>r.base))].sort();
+ }
+ // Run before the app builds its category chips (playlist load and cached start).
+ const origBuild=window.buildAutoFilters;
+ function build(list){
+  apply(list);
+  if(typeof origBuild==='function')origBuild(list);
+  if(window.svCatStats&&window.svCatStats.length){try{filterCategories=window.svCatStats.map(s=>s.name).sort((a,b)=>a.localeCompare(b));renderAutoFilterChips()}catch(e){}}
+ }
+ window.buildAutoFilters=build;
+ function refresh(){
+  const list=allCh();
+  if(list.length){build(list);try{const lc=$('channelListContainer'),top=lc?lc.scrollTop:0;renderChannels(applyFilters(list));if(lc)lc.scrollTop=top}catch(e){}}
+  renderUI();
+ }
+ const merged=d=>cfg.autoMerge||d.variants.every(v=>clean(v)===clean(d.label)||merges[v]);
+ function renderUI(){
+  $('svAutoNum').checked=!!cfg.autoNum;$('svAutoMerge').checked=!!cfg.autoMerge;$('svOnlyOk').checked=!!cfg.onlyOk;$('svStrict').checked=!!cfg.strict;
+  $('svHideInfo').textContent=Object.keys(window.svChannelStatus||{}).length?(window.svTotal||0)+' channels dikh rahe hain · '+(window.svHidden||0)+' hide (nahi chalte)':'Auto-tune scan ke baad ye filter lagega.';
+  const st=window.svCatStats||[],dp=window.svDupes||[];
+  $('svCatNums').innerHTML=st.length?`<div class="sv-card"><b>Total</b><span>${window.svTotal||0} channels${cfg.autoNum?' · 1–'+(window.svTotal||0):''}</span></div>`+st.map(s=>`<div class="sv-card"><b>${esc(s.name)}</b><span>${s.count} channels${s.min?' · '+s.min+'–'+s.max:''}</span></div>`).join(''):'<small>Playlist load hote hi categories yahan dikhengi.</small>';
+  $('svDupes').innerHTML=dp.map((d,i)=>`<div class="sv-card"><span><b>${esc(d.label)}</b> ← ${esc(d.variants.filter(v=>v!==d.label).join(', '))}</span>${merged(d)?'<small>✓ Merged</small>':`<button data-mg="${i}">Merge</button>`}</div>`).join('')||'<small>Koi duplicate category name nahi mila ✓</small>';
+  $('svMergeAll').style.display=dp.some(d=>!merged(d))?'':'none';
+  $('svCategoryOptions').innerHTML=(window.svRawCats||[]).map(v=>`<option value="${esc(v)}">`).join('');
+  $('svMergeRows').innerHTML=Object.entries(merges).map(([from,to])=>`<div class="sv-card"><span>${esc(from)} → <b>${esc(to)}</b></span><button data-delmerge="${esc(from)}">Remove</button></div>`).join('')||'<small>No manual merge rules yet.</small>';
+ }
+ function renderRows(){
+  const q=clean($('svMapSearch').value);
+  $('svMapRows').innerHTML=allCh().filter(c=>!q||clean(c.name).includes(q)||clean(c.svCat).includes(q)).slice(0,300).map(c=>`<div class="sv-maprow"><div><b>${esc(c.name||'Unnamed channel')}</b><small>${esc(c.svCat||'Uncategorized')} · No. ${c.svNum||'-'}</small></div><input type="number" min="1" max="99999" placeholder="#" data-sv-key="${esc(chKey(c))}" value="${esc(nums[chKey(c)]||'')}" aria-label="Manual channel number"></div>`).join('')||'<p>Playlist load karein ya search badlein.</p>';
+ }
+ const toastEl=$('svNumToast');let tt;
+ function toast(msg,ms,big){toastEl.style.fontSize=big?'24px':'15px';toastEl.textContent=msg;toastEl.style.display='block';clearTimeout(tt);tt=setTimeout(()=>toastEl.style.display='none',ms||1800)}
+ function open(){if(!window.svCatStats)apply();$('svMapPage').style.display='flex';renderUI();if($('svManualBox').open)renderRows()}
+ const settings=$('settingsPage');if(settings){const item=document.createElement('div');item.className='settings-item';item.innerHTML='<div class="settings-item-left">🔢 Channel Numbers & Category Merge</div><div class="settings-item-right">Manage ›</div>';item.addEventListener('click',open);settings.querySelector('.settings-list')?.appendChild(item)}
+ $('svMapBack').onclick=()=>$('svMapPage').style.display='none';
+ $('svMapSearch').addEventListener('input',renderRows);
+ $('svManualBox').addEventListener('toggle',()=>{if($('svManualBox').open)renderRows()});
+ $('svMapRows').addEventListener('input',e=>{const el=e.target.closest('[data-sv-key]');if(!el)return;const k=el.dataset.svKey;if(el.value)nums[k]=Number(el.value);else delete nums[k]});
+ $('svAutoNum').onchange=e=>{cfg.autoNum=e.target.checked;persist();refresh()};
+ $('svAutoMerge').onchange=e=>{cfg.autoMerge=e.target.checked;persist();refresh()};
+ $('svOnlyOk').onchange=e=>{cfg.onlyOk=e.target.checked;persist();refresh()};
+ $('svStrict').onchange=e=>{cfg.strict=e.target.checked;persist();refresh()};
+ $('svRenumber').onclick=()=>{refresh();toast('✅ Channel numbers ready',1800)};
+ $('svClearNums').onclick=()=>{nums={};persist();refresh();toast('Manual numbers clear ho gaye',1800)};
+ const mergeDupe=d=>d.variants.forEach(v=>{if(v!==d.label)merges[v]=d.label});
+ $('svMergeAll').onclick=()=>{(window.svDupes||[]).forEach(mergeDupe);persist();refresh();toast('✅ Duplicate categories merged',1800)};
+ $('svDupes').addEventListener('click',e=>{const b=e.target.closest('[data-mg]');if(!b)return;const d=(window.svDupes||[])[Number(b.dataset.mg)];if(d){mergeDupe(d);persist();refresh()}});
+ $('svMergeAdd').onclick=()=>{const from=$('svMergeFrom').value.trim(),to=$('svMergeTo').value.trim();if(!from||!to){$('svMapStatus').textContent='Dono category names bharein.';return}merges[from]=to;$('svMergeFrom').value='';$('svMergeTo').value='';persist();refresh()};
+ $('svMergeRows').addEventListener('click',e=>{const b=e.target.closest('[data-delmerge]');if(b){delete merges[b.dataset.delmerge];persist();refresh()}});
+ $('svMapSave').onclick=()=>{const ok=persist();refresh();$('svMapStatus').textContent=ok?'Settings saved on this device.':'Save nahi hua; browser storage check karein.'};
+ const STKEY='santv_channel_status_v1';
+ function saveStatus(){try{localStorage.setItem(STKEY,JSON.stringify({at:Date.now(),s:window.svChannelStatus||{}}))}catch(e){}}
+ try{const v=JSON.parse(localStorage.getItem(STKEY)||'null');if(v&&Date.now()-v.at<864e5&&!window.svChannelStatus)window.svChannelStatus=v.s}catch(e){}
+ // After Auto-Tune finishes: re-apply category merge + numbering and tell the user.
+ const badge=$('svAutoTuneBadge');let ran=false;
+ if(badge)new MutationObserver(()=>{const t=badge.textContent.trim();if(/^scanning/i.test(t))ran=true;else if(t==='Done'&&ran){ran=false;saveStatus();refresh();toast('✅ Auto-tune done · '+(window.svHidden||0)+' non-working hide · numbers ready',3000)}}).observe(badge,{childList:true,characterData:true,subtree:true});
+ // Remote / keyboard number pad: works on the dashboard and in the player (1 .. total).
+ function findNum(n){
+  n=Number(n);const c=allCh().find(x=>x.svNum===n);
+  if(!c)return null;
+  try{if(typeof playChannel==='function'){playChannel(c.name,c.url,c.time||'Live Now');setTimeout(()=>{try{document.querySelector('#channelListContainer .channel-item.now-playing')?.scrollIntoView({block:'nearest'})}catch(e){}},200);return c}}catch(e){}
+  return null;
+ }
+ let digits='',dt;
+ function commit(){const n=digits;digits='';clearTimeout(dt);toastEl.style.display='none';if(!n)return;const c=findNum(n);toast(c?'CH '+n+' · '+(c.name||''):'Channel '+n+' not found',1500,!c)}
+ document.addEventListener('keydown',e=>{
+  if($('svMapPage').style.display==='flex'||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable)return;
+  if(/^[0-9]$/.test(e.key)&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
+   digits=(digits+e.key).slice(-5);toast('CH  '+digits,2500,true);clearTimeout(dt);dt=setTimeout(commit,2000);e.preventDefault();e.stopPropagation();
+  }else if(e.key==='Enter'&&digits){e.preventDefault();e.stopPropagation();commit()}
+ },true);
+ // Keep the number toast visible while the browser is in full screen.
+ ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{(document.fullscreenElement||document.webkitFullscreenElement||document.body).appendChild(toastEl)}));
+})();
+</script>
+
 </body>
 </html>
+<!-- SanTV: F key = real browser full screen (hides browser bars) -->
+<script>
+(function(){
+  'use strict';
+  const typing=el=>!!(el&&(el.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(el.tagName)));
+  document.addEventListener('keydown',function(e){
+    if(e.defaultPrevented||e.ctrlKey||e.altKey||e.metaKey||typing(e.target))return;
+    if(e.key&&e.key.toLowerCase()==='f'){e.preventDefault();e.stopPropagation();if(window.svToggleFs)window.svToggleFs();}
+  },true);
+})();
+</script>
