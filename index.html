@@ -721,6 +721,14 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   html[data-device="tv"] .carousel-container { width: min(100%, calc((var(--app-h, 100vh) - var(--sv-header-h) - 2 * var(--sv-pad) - 96px) * 16 / 9)); margin: 0 auto; }
 }
 </style>
+<style id="santv-yt-fullscreen-btn">
+/* YouTube-style round full-screen button, bottom-right of the inline player (phone, tablet, desktop, TV) */
+#inlinePlayerBox .inline-expand-btn { display: flex !important; position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: rgba(28,28,28,.62); color: #fff; z-index: 12; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+#inlinePlayerBox .inline-expand-btn svg { width: 22px; height: 22px; fill: #fff; display: block; }
+#inlinePlayerBox .inline-expand-btn:active { background: rgba(60,60,60,.8); transform: scale(.94); }
+#inlinePlayerBox .inline-expand-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (max-height: 420px) { #inlinePlayerBox .inline-expand-btn { width: 34px; height: 34px; right: 6px; bottom: 6px; } #inlinePlayerBox .inline-expand-btn svg { width: 19px; height: 19px; } }
+</style>
 <style id="santv-cat-lang-buttons">
 #filterPage[data-view="cat"] .filter-section:nth-of-type(2),
 #filterPage[data-view="lang"] .filter-section:nth-of-type(1) { display: none !important; }
@@ -765,7 +773,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         <section class="player-col" aria-label="Video player">
             <div class="carousel-wrapper">
                 <div class="carousel-container" id="carousel">
-            <div class="carousel-card"><div class="card-image" id="inlinePlayerBox"><video id="inlineVideo" playsinline webkit-playsinline autoplay muted preload="auto"></video><button class="inline-expand-btn" id="inlineExpandBtn" type="button" aria-label="Full screen" title="Full screen (F)">&#x26f6;</button><div id="deskControls" role="group" aria-label="Player controls"><button type="button" id="dcPrev" aria-label="Previous channel" title="Previous channel">&#x23ee;</button><button type="button" id="dcPlay" aria-label="Play or pause" title="Play / pause">&#x23ef;</button><button type="button" id="dcNext" aria-label="Next channel" title="Next channel">&#x23ed;</button><button type="button" id="dcMute" aria-label="Mute or unmute" title="Mute / unmute">&#x1f507;</button></div><div id="inlinePlayerOverlay"><span id="inlinePlayerHint">Starting live TV automatically&#x2026;</span><button class="retry-btn" id="inlineRetryBtn" type="button" style="display:none;">Retry</button></div></div><div class="card-info"><div class="channel-logo-small" id="inlineChannelLogo">TV</div><div class="program-details"><h4 id="inlineChannelName">Live TV</h4><p id="inlineChannelTime">Auto player &#x2022; Ready to watch</p><p id="inlineChannelStatus" class="play-status" role="status" aria-live="polite"></p></div></div></div>
+            <div class="carousel-card"><div class="card-image" id="inlinePlayerBox"><video id="inlineVideo" playsinline webkit-playsinline autoplay muted preload="auto"></video><button class="inline-expand-btn" id="inlineExpandBtn" type="button" aria-label="Full screen" title="Full screen (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v2H6.4l5.3 5.3-1.4 1.4L5 6.4V10H3V3zm18 18h-7v-2h3.6l-5.3-5.3 1.4-1.4L19 17.6V14h2v7z"/></svg></button><div id="deskControls" role="group" aria-label="Player controls"><button type="button" id="dcPrev" aria-label="Previous channel" title="Previous channel">&#x23ee;</button><button type="button" id="dcPlay" aria-label="Play or pause" title="Play / pause">&#x23ef;</button><button type="button" id="dcNext" aria-label="Next channel" title="Next channel">&#x23ed;</button><button type="button" id="dcMute" aria-label="Mute or unmute" title="Mute / unmute">&#x1f507;</button></div><div id="inlinePlayerOverlay"><span id="inlinePlayerHint">Starting live TV automatically&#x2026;</span><button class="retry-btn" id="inlineRetryBtn" type="button" style="display:none;">Retry</button></div></div><div class="card-info"><div class="channel-logo-small" id="inlineChannelLogo">TV</div><div class="program-details"><h4 id="inlineChannelName">Live TV</h4><p id="inlineChannelTime">Auto player &#x2022; Ready to watch</p><p id="inlineChannelStatus" class="play-status" role="status" aria-live="polite"></p></div></div></div>
                 </div>
             </div>
         </section>
@@ -2156,7 +2164,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         const plVideoBox = $('plVideoBox'), plStage = $('plStage'), plTap = $('plTap'), plRange = $('plRange'),
               plTiles = $('plTiles'), plLiveBtn = $('plLiveBtn'), plFwd30 = $('plFwd30'), plTip = $('plTip'),
               plLockBtn = $('plLockBtn');
-        let plOpen = false, plSeeking = false, plFs = false, plHideTimer = null, plTimer = null;
+        let plSeekAt = 0, plOpen = false, plSeeking = false, plFs = false, plHideTimer = null, plTimer = null;
 
         // ================= CHANNEL RECORDING =================
         let mediaRecorder = null;
@@ -2397,6 +2405,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         }
         function hideControls(force) {
             if (playerScreen.classList.contains('portrait')) { plStage.classList.remove('hidden'); return; }
+            if (plSeeking && Date.now() - plSeekAt > 2500) plSeeking = false; /* iOS can miss 'change' -> never stay stuck */
             if (!force && (inlineVideo.paused || plSeeking)) { showControls(); return; }
             plStage.classList.add('hidden');
             clearTimeout(plHideTimer);
@@ -2535,6 +2544,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (r && r.catch) r.catch(() => { plFs = false; });
             } catch (_) { plFs = false; }
         };
+        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown'].forEach(ev => $('inlineExpandBtn')?.addEventListener(ev, e => e.stopPropagation(), { passive: true }));
         $('inlineExpandBtn')?.addEventListener('click', e => {
             e.preventDefault();
             e.stopPropagation();
@@ -2562,7 +2572,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             inlineVideo.play().catch(() => {});
             setTimeout(updateSeekUI, 150);
         });
-        plRange.addEventListener('input', () => { plSeeking = true; updateSeekUI(); });
+        plRange.addEventListener('input', () => { plSeeking = true; plSeekAt = Date.now(); updateSeekUI(); });
+        ['pointerup', 'pointercancel', 'touchend', 'touchcancel'].forEach(ev => plRange.addEventListener(ev, () => { setTimeout(() => { plSeeking = false; }, 250); }, { passive: true }));
         plRange.addEventListener('change', () => {
             const r = seekRange();
             if (r) { try { inlineVideo.currentTime = r.a + (plRange.value / 1000) * (r.b - r.a); } catch (_) {} }
@@ -4383,3 +4394,9 @@ window.svDash={refresh:applyAll,open};
   const typing=el=>!!(el&&(el.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(el.tagName)));
   document.addEventListener('keydown',function(e){
     if(e.defaultPrevented||e.ctrlKey||e.altKey||e.metaKey||typing(e.target))return;
+    if(e.key&&e.key.toLowerCase()==='f'){e.preventDefault();e.stopPropagation();if(window.svToggleFs)window.svToggleFs();}
+  },true);
+})();
+</script>
+</body>
+</html>
