@@ -676,30 +676,14 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
 <style id="santv-fullscreen-channel-strip-fix">
 @media (min-width: 700px) {
-  /* Stage stays opaque so the channel strip can stay visible; every other
-     control group fades out itself when the stage is .hidden. */
-  #player-screen:not(.portrait) .pl-stage { opacity: 1 !important; }
-  #player-screen:not(.portrait) .pl-stage.hidden { background: none; }
-  #player-screen:not(.portrait) .pl-top,
-  #player-screen:not(.portrait) .pl-mid,
-  #player-screen:not(.portrait) .pl-seek { transition: opacity .25s; }
-  #player-screen:not(.portrait) .pl-stage.hidden .pl-top,
-  #player-screen:not(.portrait) .pl-stage.hidden .pl-mid,
-  #player-screen:not(.portrait) .pl-stage.hidden .pl-seek { opacity: 0 !important; pointer-events: none !important; }
+  /* Channel strip is part of the controls: it fades out together with them (.pl-stage.hidden -> opacity 0)
+     and comes back on tap. While controls are visible it always shows. */
   #player-screen:not(.portrait) .pl-tiles {
     display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
     min-height: calc(64 * var(--u));
     flex-shrink: 0;
     margin-bottom: calc(8 * var(--u));
     background: rgba(0,0,0,.38);
-  }
-  #player-screen:not(.portrait) .pl-stage.hidden .pl-tiles,
-  #player-screen:not(.portrait) .pl-stage.hidden .pl-tiles * {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
   }
 }
 </style>
