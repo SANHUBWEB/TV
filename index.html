@@ -8,7 +8,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #f5f7fb; color: #18202b; }
-        body { display: flex; flex-direction: column; align-items: stretch; width: 100%; max-width: none; height: 100dvh; margin: 0; position: relative; overflow: hidden; min-width: 0; }
+        body { display: flex; flex-direction: column; align-items: stretch; width: 100%; max-width: none; height: var(--app-h, 100dvh); margin: 0; position: relative; overflow: hidden; min-width: 0; }
 
         /* Header */
         .app-header { width: 100%; height: 64px; background-color: #121212; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; z-index: 100; }
@@ -195,7 +195,7 @@
         .quality-option { padding: calc(7*var(--u)) calc(12*var(--u)); border-radius: calc(6*var(--u)); font-size: calc(14*var(--u)); color: #ddd; cursor: pointer; display: flex; justify-content: space-between; gap: calc(14*var(--u)); }
         .quality-option:hover { background: #333; }
         .quality-option.active { color: #ff5a73; font-weight: bold; }
-        .quality-option.active::after { content: "✓"; }
+        .quality-option.active::after { content: "\2713 "; }
 
         /* Inline Home Player */
         #inlinePlayerBox { background:#000; touch-action:none; overscroll-behavior-x:none; user-select:none; -webkit-user-select:none; }
@@ -398,7 +398,7 @@ html[data-device="tv"] .header-icon-btn,html[data-device="tv"] .chip{min-width:4
 
 /* =====================================================================
    SANTV DESKTOP / LAPTOP / TABLET / MOBILE RESPONSIVE LAYOUT
-   Breakpoints: <=600 phone | 601-999 tablet & small windows | >=1000 laptop/desktop
+   Breakpoints: <=600 phone | 601-899 tablet & small windows | >=900 laptop/desktop (also Chrome "Desktop site" ~980px)
    ===================================================================== */
 :root { --sv-header-h: 64px; --sv-pad: clamp(12px, 1.6vw, 24px); }
 #deviceModeBadge { display: none !important; }
@@ -553,13 +553,13 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 @media (hover: none) and (min-width: 601px) { #deskControls { opacity: 1; } }
 
 /* ---------- tablet / narrow windows (601-999): player on top, channel browser below ---------- */
-@media (min-width: 601px) and (max-width: 999px) {
-  .app-main { overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
-  .browser-col { flex: 0 0 auto; height: calc(100dvh - var(--sv-header-h) - 12px); }
+@media (min-width: 601px) and (max-width: 899px) {
+  .app-main { overflow: hidden; }
+  .browser-col { flex: 1 1 auto; height: auto; min-height: 0; }
 }
 
 /* ---------- laptop / desktop (>=1000): player beside the channel browser ---------- */
-@media (min-width: 1000px) {
+@media (min-width: 900px) {
   .app-main { flex-direction: row; }
   .player-col { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: var(--sv-pad); background: #f5f7fb; border-bottom: 0; }
   .carousel-container { width: min(100%, calc((100dvh - var(--sv-header-h) - 2 * var(--sv-pad) - 96px) * 16 / 9)); border-radius: 16px; box-shadow: 0 8px 28px rgba(31, 41, 55, .10); margin: 0 auto; }
@@ -608,9 +608,134 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 /* TV browsers: clear focus highlight instead of the thin default box */
 #player-screen button:focus-visible,#player-screen .pl-tile:focus-visible{outline:3px solid #ffd54a!important;outline-offset:3px}
 </style>
+
+<style id="santv-mobile-compact-layout">
+/* Compact mobile layout: keep more channels visible below the player */
+@media (max-width: 600px) {
+  :root { --sv-header-h: 48px; }
+  .app-header { height:48px!important; flex-basis:48px!important; min-height:48px!important; padding:0 10px!important; gap:7px!important; }
+  .logo-container { width:30px!important; height:30px!important; border-radius:9px!important; }
+  .logo-container svg { width:17px!important; height:17px!important; }
+  .app-title { font-size:18px!important; }
+  .header-left,.header-right { gap:7px!important; }
+  .header-icon-btn { width:34px!important; height:34px!important; border-radius:10px!important; }
+  .header-icon-btn svg { width:16px!important; height:16px!important; }
+  /* Shorter video area; video stays uncropped */
+  #inlinePlayerBox { aspect-ratio:2 / 1!important; }
+  .card-info { gap:8px!important; padding:5px 10px!important; }
+  .card-info .channel-logo-small { width:32px!important; height:32px!important; flex-basis:32px!important; }
+  .program-details h4 { font-size:13px!important; margin-bottom:1px!important; }
+  .program-details p,.program-details .play-status { font-size:11px!important; line-height:1.2!important; }
+  .chips-container { gap:5px!important; padding:5px 8px!important; }
+  .chips-container .chip { min-height:30px!important; padding:5px 9px!important; font-size:11px!important; gap:4px!important; border-radius:18px!important; }
+  .chips-container .chip svg { width:13px!important; height:13px!important; }
+  .channel-list { gap:5px!important; padding:6px 8px calc(78px + env(safe-area-inset-bottom,0px))!important; }
+  .channel-item { min-height:56px!important; padding:5px 7px!important; gap:7px!important; border-radius:10px!important; }
+  .channel-logo-box,.program-thumb { width:40px!important; height:40px!important; flex-basis:40px!important; border-radius:8px!important; }
+  .channel-item .program-info h3,.channel-item .program-info .channel-name { font-size:13px!important; line-height:1.2!important; }
+  .channel-item .program-info p { font-size:10px!important; margin-top:2px!important; }
+  .channel-item .fav-btn { width:27px!important; height:27px!important; flex-basis:27px!important; }
+  .bottom-nav { height:52px!important; bottom:calc(5px + env(safe-area-inset-bottom,0px))!important; width:min(96%,410px)!important; }
+  .nav-item { height:42px!important; padding:0 7px!important; font-size:10px!important; }
+  .nav-item svg { width:18px!important; height:18px!important; margin-bottom:2px!important; }
+  .nav-item.active { width:66px!important; }
+}
+</style>
+
+
+<style id="santv-android-tv-compat">
+/* Android TV / remote-friendly responsive layout */
+@media (min-width: 960px) and (hover: none) {
+  :root { --sv-app-font-scale: 1.12; --sv-app-layout-scale: 1.08; }
+  html, body { overscroll-behavior: none; }
+  .app-header { min-height: 62px; }
+  .channel-item, .nav-item, button, [role="button"], .chip, .filter-chip,
+  .settings-item, .display-option, .channel-card, .folder-item {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Clear focus indicator for D-pad / remote navigation */
+  :focus-visible {
+    outline: 3px solid #d72f48 !important;
+    outline-offset: 3px !important;
+  }
+  .channel-item:focus, .nav-item:focus, button:focus, [role="button"]:focus,
+  .chip:focus, .filter-chip:focus, .settings-item:focus, .display-option:focus {
+    outline: 3px solid #d72f48 !important;
+    outline-offset: 3px !important;
+    z-index: 5;
+  }
+  .channel-item { min-height: 68px; }
+  .channel-item .program-info h3, .channel-item .program-info .channel-name { font-size: 16px; }
+  .channel-item .program-info p { font-size: 13px; }
+  .bottom-nav { min-height: 64px; }
+  .nav-item { min-height: 54px; font-size: 14px; }
+}
+</style>
+
+
+<style id="santv-fullscreen-channel-strip-fix">
+@media (min-width: 700px) {
+  /* Stage stays opaque so the channel strip can stay visible; every other
+     control group fades out itself when the stage is .hidden. */
+  #player-screen:not(.portrait) .pl-stage { opacity: 1 !important; }
+  #player-screen:not(.portrait) .pl-stage.hidden { background: none; }
+  #player-screen:not(.portrait) .pl-top,
+  #player-screen:not(.portrait) .pl-mid,
+  #player-screen:not(.portrait) .pl-seek { transition: opacity .25s; }
+  #player-screen:not(.portrait) .pl-stage.hidden .pl-top,
+  #player-screen:not(.portrait) .pl-stage.hidden .pl-mid,
+  #player-screen:not(.portrait) .pl-stage.hidden .pl-seek { opacity: 0 !important; pointer-events: none !important; }
+  #player-screen:not(.portrait) .pl-tiles {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: calc(64 * var(--u));
+    flex-shrink: 0;
+    margin-bottom: calc(8 * var(--u));
+    background: rgba(0,0,0,.38);
+  }
+  #player-screen:not(.portrait) .pl-stage.hidden .pl-tiles,
+  #player-screen:not(.portrait) .pl-stage.hidden .pl-tiles * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
+</style>
+
+<style id="santv-adaptive-layout">
+/* Phone: bottom nav lives in the page flow (not position:fixed) so iOS toolbars / in-app browsers can never hide it. */
+@media (max-width: 600px) {
+  .bottom-nav { position: relative !important; left: auto !important; bottom: auto !important; transform: none !important;
+    width: calc(100% - 20px) !important; max-width: 410px; margin: 6px auto calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    flex: 0 0 auto; z-index: 5; }
+  .channel-list { padding-bottom: 12px !important; }
+  .browser-col { min-height: 0; }
+}
+/* TV browsers (often 960x540 CSS px): always side-by-side, big focus targets */
+@media (min-width: 700px) {
+  html[data-device="tv"] .app-main { flex-direction: row; overflow: hidden; }
+  html[data-device="tv"] .player-col { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: var(--sv-pad); background: #f5f7fb; border-bottom: 0; }
+  html[data-device="tv"] .browser-col { flex: 0 0 clamp(340px, 40vw, 600px); height: auto; border-left: 1px solid var(--sv-line); }
+  html[data-device="tv"] .carousel-container { width: min(100%, calc((var(--app-h, 100vh) - var(--sv-header-h) - 2 * var(--sv-pad) - 96px) * 16 / 9)); margin: 0 auto; }
+}
+</style>
+<style id="santv-cat-lang-buttons">
+#filterPage[data-view="cat"] .filter-section:nth-of-type(2),
+#filterPage[data-view="lang"] .filter-section:nth-of-type(1) { display: none !important; }
+#openFilterBtn, #openLanguageBtn { flex: 0 0 auto !important; max-width: none !important; overflow: visible !important; white-space: nowrap; }
+#openFilterBtn.sub-open, #openLanguageBtn.sub-open { background:#fff0f2 !important; color:#c92742 !important; border-color:#f3b8c2 !important; }
+.sv-subrow { display:flex; gap:8px; overflow-x:auto; padding:8px 12px; background:#f5f7fb; border-bottom:1px solid #e3e7ee; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.sv-subrow[hidden] { display:none !important; }
+.sv-subrow::-webkit-scrollbar { display:none; }
+.sv-subrow .chip { flex:0 0 auto; white-space:nowrap; min-height:34px; padding:6px 13px !important; font-size:13px !important; border-radius:999px; }
+@media (min-width:601px) { .sv-subrow { display:none !important; } }
+#openLanguageBtn svg { width: 16px; height: 16px; flex: 0 0 16px; }
+</style>
 </head>
 <body>
-<div id="deviceModeBadge" aria-hidden="true"><span class="device-dot"></span><span id="deviceModeText">Detecting device…</span></div>
+<div id="deviceModeBadge" aria-hidden="true"><span class="device-dot"></span><span id="deviceModeText">Detecting device&#x2026;</span></div>
 
     <div id="santvSplash" role="status" aria-label="Loading SanTv">
         <div class="splash-brand">
@@ -640,7 +765,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         <section class="player-col" aria-label="Video player">
             <div class="carousel-wrapper">
                 <div class="carousel-container" id="carousel">
-            <div class="carousel-card"><div class="card-image" id="inlinePlayerBox"><video id="inlineVideo" playsinline webkit-playsinline autoplay muted preload="auto"></video><button class="inline-expand-btn" id="inlineExpandBtn" type="button" aria-label="Full screen" title="Full screen (F)">⛶</button><div id="deskControls" role="group" aria-label="Player controls"><button type="button" id="dcPrev" aria-label="Previous channel" title="Previous channel">⏮</button><button type="button" id="dcPlay" aria-label="Play or pause" title="Play / pause">⏯</button><button type="button" id="dcNext" aria-label="Next channel" title="Next channel">⏭</button><button type="button" id="dcMute" aria-label="Mute or unmute" title="Mute / unmute">🔇</button></div><div id="inlinePlayerOverlay"><span id="inlinePlayerHint">Starting live TV automatically…</span><button class="retry-btn" id="inlineRetryBtn" type="button" style="display:none;">Retry</button></div></div><div class="card-info"><div class="channel-logo-small" id="inlineChannelLogo">TV</div><div class="program-details"><h4 id="inlineChannelName">Live TV</h4><p id="inlineChannelTime">Auto player • Ready to watch</p><p id="inlineChannelStatus" class="play-status" role="status" aria-live="polite"></p></div></div></div>
+            <div class="carousel-card"><div class="card-image" id="inlinePlayerBox"><video id="inlineVideo" playsinline webkit-playsinline autoplay muted preload="auto"></video><button class="inline-expand-btn" id="inlineExpandBtn" type="button" aria-label="Full screen" title="Full screen (F)">&#x26f6;</button><div id="deskControls" role="group" aria-label="Player controls"><button type="button" id="dcPrev" aria-label="Previous channel" title="Previous channel">&#x23ee;</button><button type="button" id="dcPlay" aria-label="Play or pause" title="Play / pause">&#x23ef;</button><button type="button" id="dcNext" aria-label="Next channel" title="Next channel">&#x23ed;</button><button type="button" id="dcMute" aria-label="Mute or unmute" title="Mute / unmute">&#x1f507;</button></div><div id="inlinePlayerOverlay"><span id="inlinePlayerHint">Starting live TV automatically&#x2026;</span><button class="retry-btn" id="inlineRetryBtn" type="button" style="display:none;">Retry</button></div></div><div class="card-info"><div class="channel-logo-small" id="inlineChannelLogo">TV</div><div class="program-details"><h4 id="inlineChannelName">Live TV</h4><p id="inlineChannelTime">Auto player &#x2022; Ready to watch</p><p id="inlineChannelStatus" class="play-status" role="status" aria-live="polite"></p></div></div></div>
                 </div>
             </div>
         </section>
@@ -648,24 +773,26 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         <section class="browser-col" id="browserCol" aria-label="Channel browser">
             <div class="browser-top">
                 <div class="search-row">
-                    <label class="inline-search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><input type="search" id="channelSearchInline" placeholder="Search channels…" aria-label="Search channels" autocomplete="off"></label>
+                    <label class="inline-search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><input type="search" id="channelSearchInline" placeholder="Search channels&#x2026;" aria-label="Search channels" autocomplete="off"></label>
                     <select id="channelSort" aria-label="Sort channels">
                         <option value="default">Playlist order</option>
-                        <option value="az">Name A–Z</option>
-                        <option value="za">Name Z–A</option>
+                        <option value="az">Name A&#x2013;Z</option>
+                        <option value="za">Name Z&#x2013;A</option>
                         <option value="fav">Favourites first</option>
                     </select>
                 </div>
     <div class="chips-container" role="toolbar" aria-label="Quick filters">
-        <button type="button" class="chip" id="openFilterBtn" aria-controls="filterPage" aria-expanded="true"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg> Filters (All)</button>
+        <button type="button" class="chip" id="openFilterBtn" aria-controls="filterPage" aria-expanded="true"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg> Categories</button>
+        <button type="button" class="chip" id="openLanguageBtn" aria-controls="filterPage" aria-expanded="true"><svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg> Language</button>
         <button class="chip record-chip" id="recordChip" type="button"><span class="record-dot" aria-hidden="true"></span><span id="recordChipLabel">Record</span></button>
         <button type="button" class="chip" id="watchedChip" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg> Watched</button>
         <button type="button" class="chip" id="favChip" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> Favourite</button>
-        <button class="chip" id="recentWatchChip" type="button" aria-pressed="false"><span aria-hidden="true">🕘</span> Recent Watch</button>
+        <button class="chip" id="recentWatchChip" type="button" aria-pressed="false"><span aria-hidden="true">&#x1f558;</span> Recent Watch</button>
     </div>
+    <div class="sv-subrow" id="svSubRow" role="listbox" aria-label="Options" hidden></div>
     <!-- Filter panel (overlay on phones, inline panel on tablet/laptop/desktop) -->
     <div class="filter-page" id="filterPage">
-        <div class="filter-header"><button class="back-btn" id="closeFilterBtn"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><span class="settings-title">Filters</span></div>
+        <div class="filter-header"><button class="back-btn" id="closeFilterBtn"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><span class="settings-title" id="filterPageTitle">Filters</span></div>
         <div class="filter-content">
             <div class="filter-section"><div class="filter-section-title"><svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg> Categories</div>
                 <div class="filter-chips-wrap" id="categoryFilterChips"><div class="filter-chip active">All</div></div>
@@ -701,9 +828,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             <div class="settings-item"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg> Autoplay on Home</div><div class="settings-item-right"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div></div>
             <div class="settings-item"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg> Classic TV Guide</div><div class="settings-item-right"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div></div>
             <div class="settings-item" id="dataUsageBtn"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19h3.64C9.53 20.21 10.71 21 12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg> Data Usage & Playlist URL</div><div class="settings-item-right">&gt;</div></div>
-            <div class="settings-item" id="autoScanChannelsBtn"><div class="settings-item-left"><span aria-hidden="true">🔎</span><span>Auto Detect & Scan Channels<div id="svAutoTuneStatus" style="font-size:12px;color:#718096;margin-top:4px">● Auto-tune ready</div></span></div><div class="settings-item-right" id="svAutoTuneBadge">Ready &gt;</div></div>
-            <div class="settings-item" id="externalPlayerBtn"><div class="settings-item-left"><span aria-hidden="true">▶️</span> Open in External Player</div><div class="settings-item-right">Choose &gt;</div></div>
-            <div class="settings-item" id="displaySettingsBtn"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H4V5zm-2 12h20v2H2v-2z"/></svg> Display & Audio</div><div class="settings-item-right"><span class="mini-value" id="displaySummary">Auto • Fit</span> &gt;</div></div>
+            <div class="settings-item" id="autoScanChannelsBtn"><div class="settings-item-left"><span aria-hidden="true">&#x1f50e;</span><span>Auto Detect & Scan Channels<div id="svAutoTuneStatus" style="font-size:12px;color:#718096;margin-top:4px">&#x25cf; Auto-tune ready</div></span></div><div class="settings-item-right" id="svAutoTuneBadge">Ready &gt;</div></div>
+            <div class="settings-item" id="externalPlayerBtn"><div class="settings-item-left"><span aria-hidden="true">&#x25b6;&#xfe0f;</span> Open in External Player</div><div class="settings-item-right">Choose &gt;</div></div>
+            <div class="settings-item" id="displaySettingsBtn"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H4V5zm-2 12h20v2H2v-2z"/></svg> Display & Audio</div><div class="settings-item-right"><span class="mini-value" id="displaySummary">Auto &#x2022; Fit</span> &gt;</div></div>
             <div class="settings-item"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> Parental Controls</div><div class="settings-item-right">&gt;</div></div>
             <div class="settings-item" style="border-bottom: none;"><div class="settings-item-left"><svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.41L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg> Sign Out</div><div class="settings-item-right">&gt;</div></div>
         </div>
@@ -718,7 +845,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         </div>
         <div class="display-settings-content">
             <div class="display-setting-card">
-                <div class="display-setting-title">🔄 Display Rotate</div>
+                <div class="display-setting-title">&#x1f504; Display Rotate</div>
                 <div class="display-options" id="rotateOptions">
                     <button class="display-option active" data-value="auto">Auto</button>
                     <button class="display-option" data-value="portrait">Portrait</button>
@@ -728,7 +855,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             </div>
 
             <div class="display-setting-card">
-                <div class="display-setting-title">🖥️ Display Quality</div>
+                <div class="display-setting-title">&#x1f5a5;&#xfe0f; Display Quality</div>
                 <div class="display-options" id="displayQualityOptions">
                     <button class="display-option active" data-value="standard">Standard</button>
                     <button class="display-option" data-value="vivid">Vivid</button>
@@ -738,7 +865,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             </div>
 
             <div class="display-setting-card">
-                <div class="display-setting-title">📐 Screen Ratio</div>
+                <div class="display-setting-title">&#x1f4d0; Screen Ratio</div>
                 <div class="display-options" id="screenRatioOptions">
                     <button class="display-option active" data-value="auto">Auto</button>
                     <button class="display-option" data-value="fit">Fit</button>
@@ -751,28 +878,28 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             </div>
 
             <div class="display-setting-card ui-scale-card">
-                <div class="display-setting-title">🔠 App Text Size</div>
+                <div class="display-setting-title">&#x1f520; App Text Size</div>
                 <div class="ui-slider-head"><span>Small</span><strong id="appFontScaleValue">100%</strong><span>Large</span></div>
                 <input class="ui-size-slider" id="appFontScale" type="range" min="85" max="125" step="5" value="100" aria-label="App text size">
                 <div class="display-help">App ke headings, channel names, buttons aur navigation ka text chhota/bada karein.</div>
             </div>
 
             <div class="display-setting-card ui-scale-card">
-                <div class="display-setting-title">🧩 App Layout Size</div>
+                <div class="display-setting-title">&#x1f9e9; App Layout Size</div>
                 <div class="ui-slider-head"><span>Compact</span><strong id="appLayoutScaleValue">100%</strong><span>Roomy</span></div>
                 <input class="ui-size-slider" id="appLayoutScale" type="range" min="85" max="120" step="5" value="100" aria-label="App layout size">
                 <div class="display-help">Channel cards, gaps aur padding ko compact ya spacious banayein.</div>
             </div>
 
             <div class="display-setting-card ui-scale-card">
-                <div class="display-setting-title">🎮 Full-screen Player Controls</div>
+                <div class="display-setting-title">&#x1f3ae; Full-screen Player Controls</div>
                 <div class="ui-slider-head"><span>Small</span><strong id="playerUiScaleValue">100%</strong><span>Large</span></div>
                 <input class="ui-size-slider" id="playerUiScale" type="range" min="80" max="125" step="5" value="100" aria-label="Player control size">
                 <div class="display-help">Full-screen player ke buttons, channel title aur controls ka size badlein. Video screen ke andar hi rahega.</div>
             </div>
 
             <div class="display-setting-card">
-                <div class="display-setting-title">🔊 Dolby Atmos audio</div>
+                <div class="display-setting-title">&#x1f50a; Dolby Atmos audio</div>
                 <label class="settings-item" style="padding:8px 0;border-bottom:0;">
                     <div class="settings-item-left"><span>Immersive audio preference</span></div>
                     <div class="settings-item-right">
@@ -796,9 +923,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             <div class="url-input-group">
                 <input type="text" id="iptvUrlInput" placeholder="https://iptv-org.github.io/iptv/countries/in.m3u">
                 <button id="saveUrlBtn">Save & Load Channels</button>
-                <button class="refresh-btn" id="refreshUrlBtn" style="display: none;">🔄 Refresh Channels</button>
-                <button class="clear-btn" id="clearCacheBtn" style="display: none;">🗑️ Clear Cache</button>
-                <p style="font-size:13px;color:#687386;line-height:1.45">Refresh adds new channels to your saved list. Channels will stay here even if they disappear from a later playlist. Use “Clear Cache” only when you want to delete the saved list.</p>
+                <button class="refresh-btn" id="refreshUrlBtn" style="display: none;">&#x1f504; Refresh Channels</button>
+                <button class="clear-btn" id="clearCacheBtn" style="display: none;">&#x1f5d1;&#xfe0f; Clear Cache</button>
+                <p style="font-size:13px;color:#687386;line-height:1.45">Refresh adds new channels to your saved list. Channels will stay here even if they disappear from a later playlist. Use &#x201c;Clear Cache&#x201d; only when you want to delete the saved list.</p>
             </div>
             <p style="color:#888; margin-top:24px; font-size:13px;">Optional: your own CORS proxy for streams that fail to play. Format: https://your-proxy.example/?url=</p>
             <div class="url-input-group" style="margin-top:8px;">
@@ -808,7 +935,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             <p id="urlStatusMsg"></p>
 
             <div class="cache-info" id="cacheInfo" style="display: none;">
-                <h4>📦 Cached Playlist Info</h4>
+                <h4>&#x1f4e6; Cached Playlist Info</h4>
                 <p id="cacheDetails">Loading info...</p>
             </div>
         </div>
@@ -820,18 +947,18 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         <div class="filter-content" style="display: flex; flex-direction: column;">
             <div class="language-grid">
                 <div class="lang-card selected"><span>English</span><span class="badge">1</span></div>
-                <div class="lang-card selected"><span>हिंदी<br><small>Hindi</small></span><span class="badge">2</span></div>
-                <div class="lang-card selected"><span>मराठी<br><small>Marathi</small></span><span class="badge">3</span></div>
-                <div class="lang-card"><span>ਪੰਜਾਬੀ<br><small>Punjabi</small></span></div>
-                <div class="lang-card"><span>اردو<br><small>Urdu</small></span></div>
-                <div class="lang-card"><span>বাংলা<br><small>Bengali</small></span></div>
-                <div class="lang-card"><span>മലയാളം<br><small>Malayalam</small></span></div>
-                <div class="lang-card"><span>தமிழ்<br><small>Tamil</small></span></div>
-                <div class="lang-card"><span>ગુજરાતી<br><small>Gujarati</small></span></div>
-                <div class="lang-card"><span>ଓଡ଼ିଆ<br><small>Odia</small></span></div>
-                <div class="lang-card"><span>తెలుగు<br><small>Telugu</small></span></div>
-                <div class="lang-card"><span>भोजपुरी<br><small>Bhojpuri</small></span></div>
-                <div class="lang-card"><span>ಕನ್ನಡ<br><small>Kannada</small></span></div>
+                <div class="lang-card selected"><span>&#x939;&#x93f;&#x902;&#x926;&#x940;<br><small>Hindi</small></span><span class="badge">2</span></div>
+                <div class="lang-card selected"><span>&#x92e;&#x930;&#x93e;&#x920;&#x940;<br><small>Marathi</small></span><span class="badge">3</span></div>
+                <div class="lang-card"><span>&#xa2a;&#xa70;&#xa1c;&#xa3e;&#xa2c;&#xa40;<br><small>Punjabi</small></span></div>
+                <div class="lang-card"><span>&#x627;&#x631;&#x62f;&#x648;<br><small>Urdu</small></span></div>
+                <div class="lang-card"><span>&#x9ac;&#x9be;&#x982;&#x9b2;&#x9be;<br><small>Bengali</small></span></div>
+                <div class="lang-card"><span>&#xd2e;&#xd32;&#xd2f;&#xd3e;&#xd33;&#xd02;<br><small>Malayalam</small></span></div>
+                <div class="lang-card"><span>&#xba4;&#xbae;&#xbbf;&#xbb4;&#xbcd;<br><small>Tamil</small></span></div>
+                <div class="lang-card"><span>&#xa97;&#xac1;&#xa9c;&#xab0;&#xabe;&#xaa4;&#xac0;<br><small>Gujarati</small></span></div>
+                <div class="lang-card"><span>&#xb13;&#xb21;&#xb3c;&#xb3f;&#xb06;<br><small>Odia</small></span></div>
+                <div class="lang-card"><span>&#xc24;&#xc46;&#xc32;&#xc41;&#xc17;&#xc41;<br><small>Telugu</small></span></div>
+                <div class="lang-card"><span>&#x92d;&#x94b;&#x91c;&#x92a;&#x941;&#x930;&#x940;<br><small>Bhojpuri</small></span></div>
+                <div class="lang-card"><span>&#xc95;&#xca8;&#xccd;&#xca8;&#xca1;<br><small>Kannada</small></span></div>
             </div>
             <button class="btn-confirm" id="confirmLangBtn">Confirm</button>
         </div>
@@ -850,7 +977,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                     <div class="pl-actions">
                         <button class="pl-act" id="plPipBtn" aria-label="Picture in picture"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></button>
                         <button class="pl-act" id="plLockBtn" aria-label="Lock controls"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></button>
-                        <button class="pl-act pl-record-btn" id="plRecordBtn" aria-label="Record"><span>●</span></button>
+                        <button class="pl-act pl-record-btn" id="plRecordBtn" aria-label="Record"><span>&#x25cf;</span></button>
                         <button class="pl-act" id="svRatioBtn" aria-label="Screen size" title="Screen size (Auto / Full / Fit / Stretch)"><svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v4h-4v2h6v-6z" transform="translate(0 0)"/></svg></button>
                         <button class="pl-act" id="playerSettingsBtn" aria-label="Quality"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
                         <button class="pl-act" id="plExitBtn" aria-label="Exit full screen"><svg viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
@@ -894,7 +1021,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         </div>
         <div class="search-content" id="searchResultsContainer">
             <div class="search-section">
-                <div class="search-section-title"><div style="display: flex; align-items: center; gap: 8px;"><span>🔥</span> Trending Searches</div><span class="chevron">⌄</span></div>
+                <div class="search-section-title"><div style="display: flex; align-items: center; gap: 8px;"><span>&#x1f525;</span> Trending Searches</div><span class="chevron">&#x2304;</span></div>
                 <div class="tags-scroll">
                     <div class="search-tag" onclick="fillSearch('news')">news</div>
                     <div class="search-tag" onclick="fillSearch('sports')">sports</div>
@@ -1039,13 +1166,13 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         function channelStatusBadge(channel) {
             const st = (window.svChannelStatus || {})[channelKey(channel)];
             const map = {
-                ok: ['good', '✓ verified', 'Playback started in a test element'],
-                reachable: ['good', '✓ reachable', 'Playlist manifest answered; playback not tested'],
-                unsupported: ['warn', '⚠ format', 'This browser cannot play this format natively; the app may still play it with HLS.js'],
-                unavailable: ['warn', '⚠ not found', 'Server answered 404/410 for this stream'],
-                mixed: ['warn', '⚠ http', 'HTTP stream on an HTTPS page is blocked by the browser; a proxy may be needed'],
-                network: ['warn', '⚠ network', 'A network error occurred while testing; the stream may still work'],
-                invalid: ['warn', '⚠ no URL', 'This entry has no valid http/https URL']
+                ok: ['good', '\u2713 verified', 'Playback started in a test element'],
+                reachable: ['good', '\u2713 reachable', 'Playlist manifest answered; playback not tested'],
+                unsupported: ['warn', '\u26a0 format', 'This browser cannot play this format natively; the app may still play it with HLS.js'],
+                unavailable: ['warn', '\u26a0 not found', 'Server answered 404/410 for this stream'],
+                mixed: ['warn', '\u26a0 http', 'HTTP stream on an HTTPS page is blocked by the browser; a proxy may be needed'],
+                network: ['warn', '\u26a0 network', 'A network error occurred while testing; the stream may still work'],
+                invalid: ['warn', '\u26a0 no URL', 'This entry has no valid http/https URL']
             };
             const m = map[st];
             return m ? `<span class="ch-badge ${m[0]}" title="${escapeHtml(m[2])}">${m[1]}</span>` : '';
@@ -1054,7 +1181,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         function emptyStateHtml() {
             const total = Array.isArray(channels) ? channels.length : 0;
             if (!total && playlistState === 'loading') {
-                return '<div class="empty-state"><h3><span class="spinner"></span>Loading channels…</h3><p>Downloading and reading your playlist.</p></div>';
+                return '<div class="empty-state"><h3><span class="spinner"></span>Loading channels\u2026</h3><p>Downloading and reading your playlist.</p></div>';
             }
             if (!total && playlistState === 'error') {
                 return '<div class="empty-state"><h3>Playlist could not be loaded</h3><p>Check the URL and your connection, or set a proxy in Playlist settings.</p><small>' + escapeHtml(playlistError || 'Unknown error') + '</small><button type="button" data-empty-action="retry">Try again</button> <button type="button" data-empty-action="playlist">Open playlist settings</button></div>';
@@ -1103,12 +1230,12 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 const logo = channel.logo ? escapeHtml(channel.logo) : '';
                 const watched = watchedChannels.has(channelKey(channel));
                 const favourite = favouriteChannels.has(channelKey(channel));
-                const meta = [channel.group, channel.language].filter(Boolean).join(' • ');
+                const meta = [channel.group, channel.language].filter(Boolean).join(' \u2022 ');
                 item.innerHTML = `
                     <div class="channel-logo-box">${logo ? `<img src="${logo}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.style.display='none'">` : `<div class="channel-logo-text">${logoText}</div>`}</div>
-                    <div class="program-thumb" aria-hidden="true"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.7;">${watched ? '✓' : '▶'}</div></div>
+                    <div class="program-thumb" aria-hidden="true"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.7;">${watched ? '\u2713' : '\u25b6'}</div></div>
                     <div class="program-info"><h4>${channel.svNum ? '<span class="sv-chnum">' + channel.svNum + '</span>' : ''}${escapeHtml(channel.name)}</h4><p>${escapeHtml(meta || channel.time || 'Live TV | Tap to watch')}${channelStatusBadge(channel)}</p></div>
-                    <button type="button" class="fav-btn" aria-pressed="${favourite}" aria-label="${favourite ? 'Remove from' : 'Add to'} favourites: ${escapeHtml(channel.name)}" title="${favourite ? 'Remove from favourites' : 'Add to favourites'}">${favourite ? '♥' : '♡'}</button>
+                    <button type="button" class="fav-btn" aria-pressed="${favourite}" aria-label="${favourite ? 'Remove from' : 'Add to'} favourites: ${escapeHtml(channel.name)}" title="${favourite ? 'Remove from favourites' : 'Add to favourites'}">${favourite ? '\u2665' : '\u2661'}</button>
                 `;
                 item.addEventListener('click', () => {
                     if (Date.now() < suppressClickUntil) return;
@@ -1404,18 +1531,22 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
         function updateFilterLabel() {
             const btn = document.getElementById('openFilterBtn');
-            if (!btn) return;
+            const lbtn = document.getElementById('openLanguageBtn');
             const activeCategory = document.querySelector('#categoryFilterChips .filter-chip.active');
             const categoryName = (activeCategory?.dataset.value || activeCategory?.textContent || 'All').trim();
             const activeLanguages = [...document.querySelectorAll('#languageFilterChips .filter-chip.active')]
                 .map(x => (x.dataset.value || x.textContent).trim()).filter(x => x.toLowerCase() !== 'all');
-            const label = categoryName.toLowerCase() === 'all' ? 'Category' : categoryName;
-            const svg = btn.querySelector('svg');
-            btn.innerHTML = '';
-            if (svg) btn.appendChild(svg);
-            btn.appendChild(document.createTextNode(` ${label}${activeLanguages.length ? ' · ' + activeLanguages.join(', ') : ''}`));
-            btn.title = `Selected category: ${categoryName}`;
-            btn.setAttribute('aria-label', `Open filters. Selected category: ${categoryName}`);
+            const setLabel = (el, text, title, aria) => {
+                if (!el) return;
+                const svg = el.querySelector('svg');
+                el.innerHTML = '';
+                if (svg) el.appendChild(svg);
+                el.appendChild(document.createTextNode(' ' + text));
+                el.title = title; el.setAttribute('aria-label', aria);
+                el.classList.toggle('has-selection', text !== el.dataset.defaultLabel);
+            };
+            if (btn) { btn.dataset.defaultLabel = 'Categories'; setLabel(btn, categoryName.toLowerCase() === 'all' ? 'Categories' : categoryName, `Selected category: ${categoryName}`, `Open categories. Selected: ${categoryName}`); }
+            if (lbtn) { lbtn.dataset.defaultLabel = 'Language'; const t = activeLanguages.length ? activeLanguages.join(', ') : 'Language'; setLabel(lbtn, t, `Selected language: ${activeLanguages.join(', ') || 'All'}`, `Open languages. Selected: ${activeLanguages.join(', ') || 'All'}`); }
         }
 
         // ================= M3U PARSER =================
@@ -1638,7 +1769,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (saveToCache) {
                     const saved = saveChannelsToCache(channels, url);
                     if (urlStatusMsg) {
-                        urlStatusMsg.innerHTML = saved ? `✅ ${channels.length} total saved channels. New channels were added; older channels were kept.` : `✅ ${channels.length} channels loaded.`;
+                        urlStatusMsg.innerHTML = saved ? `\u2705 ${channels.length} total saved channels. New channels were added; older channels were kept.` : `\u2705 ${channels.length} channels loaded.`;
                         urlStatusMsg.style.color = saved ? '#4caf50' : '#ff9800';
                     }
                 }
@@ -1648,7 +1779,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 console.error('Playlist load error:', error);
                 playlistState = 'error'; playlistError = error.message || String(error);
                 renderChannels(Array.isArray(channels) && channels.length ? applyFilters(channels) : []);
-                if (urlStatusMsg) { urlStatusMsg.innerHTML = `❌ ${escapeHtml(error.message)}`; urlStatusMsg.style.color = '#ff5252'; }
+                if (urlStatusMsg) { urlStatusMsg.innerHTML = `\u274c ${escapeHtml(error.message)}`; urlStatusMsg.style.color = '#ff5252'; }
             }
         }
 
@@ -1682,7 +1813,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
             // Play directly inside the black home-screen area.
             if (inlinePlayerBox) inlinePlayerBox.classList.remove('error');
-            if (inlinePlayerHint) inlinePlayerHint.textContent = 'Loading…';
+            if (inlinePlayerHint) inlinePlayerHint.textContent = 'Loading\u2026';
             if (inlineRetryBtn) inlineRetryBtn.style.display = 'none';
             inlineVideo.muted = true;
             inlineVideo.autoplay = true;
@@ -1858,7 +1989,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             clearPlayerError();
             stopCurrentPlayback();
             if (inlinePlayerBox) inlinePlayerBox.classList.remove('playing');
-            setHint('Auto player: ' + playbackPlatform.device + ' · ' + playbackPlatform.browser + ' · detecting stream…');
+            setHint('Auto player: ' + playbackPlatform.device + ' \u00b7 ' + playbackPlatform.browser + ' \u00b7 detecting stream\u2026');
             if (!url) { showInlineError('No stream URL'); return; }
 
             if (svChannelPlayer(url) === 'external') {
@@ -1935,7 +2066,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 h.on(Hls.Events.ERROR, (event, data) => {
                     if (token !== playToken || !data || !data.fatal) return;
                     if (data.details === Hls.ErrorDetails.MANIFEST_PARSING_ERROR) {
-                        // Not an HLS playlist (plain mp4 / direct stream) – let the browser try natively.
+                        // Not an HLS playlist (plain mp4 / direct stream) \u2013 let the browser try natively.
                         stopCurrentPlayback();
                         startNative(mode, source);
                         return;
@@ -1953,7 +2084,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
             const startAttempt = (mode) => {
                 const prev = attemptLog.length ? ' (prev ' + attemptLog[attemptLog.length - 1] + ')' : '';
-                setHint(attemptLog.length ? 'Trying ' + mode.label + '…' + prev : 'Loading…');
+                setHint(attemptLog.length ? 'Trying ' + mode.label + '\u2026' + prev : 'Loading\u2026');
                 const proxied = mode.wrap ? mode.wrap(url) : url;
                 if (nativeOnly || mode.kind === 'native') { startNative(mode, proxied); return; }
                 if (hlsOk()) { startHls(mode, mode.kind === 'rewrite' ? proxied : url); return; }
@@ -1967,16 +2098,16 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (modeIdx >= modes.length) {
                     console.warn('All routes failed:', attemptLog);
                     const hasWorker = getProxyModes()[0].kind === 'rewrite';
-                    showInlineError('Stream unavailable on ' + playbackPlatform.device + ' — ' + (attemptLog.join(' | ') || 'no route') +
+                    showInlineError('Stream unavailable on ' + playbackPlatform.device + ' \u2014 ' + (attemptLog.join(' | ') || 'no route') +
                         ' [page ' + location.protocol + ']' +
-                        (mixed && !hasWorker ? ' — http stream on https page: set your Worker proxy in Data Usage' : ''));
+                        (mixed && !hasWorker ? ' \u2014 http stream on https page: set your Worker proxy in Data Usage' : ''));
                     return;
                 }
                 startAttempt(modes[modeIdx]);
             };
 
             if (typeof Hls === 'undefined' && !nativeOnly && !canNativeHls) {
-                setHint('Loading player…');
+                setHint('Loading player\u2026');
                 ensureHls().then(() => { if (token === playToken) attemptNext(); });
             } else {
                 attemptNext();
@@ -1994,7 +2125,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         inlineVideo.addEventListener('waiting', () => {
             if (inlinePlayerBox && inlinePlayerBox.classList.contains('playing')) {
                 inlinePlayerBox.classList.remove('playing');
-                setHint('Buffering…');
+                setHint('Buffering\u2026');
             }
         });
         inlineVideo.addEventListener('play', () => updatePlayPauseIcon());
@@ -2117,7 +2248,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
                 mediaRecorder.start(1000);
                 setRecordUI(true);
-                setHint('🔴 Recording started');
+                setHint('\ud83d\udd34 Recording started');
             } catch (e) {
                 mediaRecorder = null;
                 recordStream = null;
@@ -2182,17 +2313,28 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             const currentCat = String(currentAssignment && currentAssignment.cat || '').trim().toLowerCase();
             const currentLang = String(currentAssignment && currentAssignment.lang || '').trim().toLowerCase();
 
-            // No category/language saved for the playing channel? Do not show
-            // unrelated channels as a fallback.
-            if (!currentCat || !currentLang) return [];
+            // If the current channel has no category/language assignment,
+            // still show the available channel list instead of an empty strip.
+            // When an assignment exists, keep the strip filtered by category + language.
+            if (!currentCat || !currentLang) {
+                return channels.filter(c => {
+                    const a = assignment(c);
+                    return (!a || a.show !== false) && !c.svHide && !!(c.url || c.name);
+                });
+            }
 
-            return channels.filter(c => {
+            const matching = channels.filter(c => {
                 const a = assignment(c);
                 return !!a &&
                     String(a.cat || '').trim().toLowerCase() === currentCat &&
                     String(a.lang || '').trim().toLowerCase() === currentLang &&
                     a.show !== false &&
                     !c.svHide;
+            });
+            // Defensive fallback if no channels match the saved category/language.
+            return matching.length ? matching : channels.filter(c => {
+                const a = assignment(c);
+                return (!a || a.show !== false) && !c.svHide && !!(c.url || c.name);
             });
         }
         function layoutPlayer() {
@@ -2267,7 +2409,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             if (!plOpen) return;
             $('playerChannelName').textContent = inlineChannelName.textContent || 'Live TV';
             const c = currentChannelObj();
-            $('playerChannelTime').textContent = (c && [c.group, c.language].filter(Boolean).join(' • ')) || 'Live';
+            $('playerChannelTime').textContent = (c && [c.group, c.language].filter(Boolean).join(' \u2022 ')) || 'Live';
             markActiveTile();
         }
         function onChannelChanged() {
@@ -2625,7 +2767,6 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         const openFilterBtn = document.getElementById('openFilterBtn');
         const filterPage = document.getElementById('filterPage');
         const closeFilterBtn = document.getElementById('closeFilterBtn');
-        openFilterBtn.addEventListener('click', () => { filterPage.style.display = 'flex'; });
         closeFilterBtn.addEventListener('click', () => { filterPage.style.display = 'none'; });
         document.getElementById('okayFilterBtn').addEventListener('click', () => { filterPage.style.display = 'none'; });
         document.getElementById('clearFilterBtn').addEventListener('click', () => {
@@ -2637,7 +2778,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         // Auto-generated filter chips are bound by bindFilterChips().
         bindFilterChips();
         document.querySelectorAll('.chips-container .chip').forEach(chip => {
-            if (chip.id === 'recordChip' || chip.id === 'openFilterBtn') return;
+            if (chip.id === 'recordChip' || chip.id === 'openFilterBtn' || chip.id === 'openLanguageBtn') return;
             chip.addEventListener('click', () => {
                 chip.classList.toggle('active');
                 renderChannels(applyFilters(channels));
@@ -2681,7 +2822,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 clearCache();
                 updateCacheInfo();
                 iptvUrlInput.value = '';
-                urlStatusMsg.innerHTML = '🗑️ Cache cleared!';
+                urlStatusMsg.innerHTML = '\ud83d\uddd1\ufe0f Cache cleared!';
                 urlStatusMsg.style.color = '#ff9800';
                 urlStatusMsg.style.display = 'block';
                 setTimeout(() => { urlStatusMsg.style.display = 'none'; }, 2000);
@@ -2700,7 +2841,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             const v = proxyUrlInput.value.trim();
             if (v && !/^https?:\/\//i.test(v)) { alert('Proxy URL must start with http:// or https://'); return; }
             if (v) localStorage.setItem('iptv_proxy', v); else localStorage.removeItem('iptv_proxy');
-            urlStatusMsg.textContent = v ? '✅ Proxy saved' : 'Proxy removed';
+            urlStatusMsg.textContent = v ? '\u2705 Proxy saved' : 'Proxy removed';
             urlStatusMsg.style.color = '#4caf50';
             urlStatusMsg.style.display = 'block';
             setTimeout(() => { urlStatusMsg.style.display = 'none'; }, 1800);
@@ -2744,7 +2885,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             query = String(query || '').toLowerCase().trim();
             const container = document.getElementById('searchResultsContainer');
             if (query === '') {
-                container.innerHTML = `<div class="search-section"><div class="search-section-title"><div style="display:flex;align-items:center;gap:8px;"><span>🔥</span> Trending Searches</div><span class="chevron">⌄</span></div><div class="tags-scroll">${['news','sports','hindi','movie','music'].map(x=>`<div class="search-tag" data-term="${x}">${x}</div>`).join('')}</div></div>`;
+                container.innerHTML = `<div class="search-section"><div class="search-section-title"><div style="display:flex;align-items:center;gap:8px;"><span>\ud83d\udd25</span> Trending Searches</div><span class="chevron">\u2304</span></div><div class="tags-scroll">${['news','sports','hindi','movie','music'].map(x=>`<div class="search-tag" data-term="${x}">${x}</div>`).join('')}</div></div>`;
                 container.querySelectorAll('.search-tag').forEach(el => el.addEventListener('click', () => fillSearch(el.dataset.term)));
                 return;
             }
@@ -2755,7 +2896,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             filtered.slice(0, 50).forEach(ch => {
                 const item = document.createElement('div'); item.className = 'channel-item'; item.style.marginBottom = '12px';
                 const logoText = escapeHtml((ch.name || 'TV').split(/\s+/).map(w=>w[0]).join('').substring(0,4).toUpperCase());
-                item.innerHTML = `<div class="channel-logo-box"><div class="channel-logo-text">${logoText}</div></div><div class="program-info"><h4>${escapeHtml(ch.name)}</h4><p>Live TV${ch.group ? ' • '+escapeHtml(ch.group) : ''}</p></div>`;
+                item.innerHTML = `<div class="channel-logo-box"><div class="channel-logo-text">${logoText}</div></div><div class="program-info"><h4>${escapeHtml(ch.name)}</h4><p>Live TV${ch.group ? ' \u2022 '+escapeHtml(ch.group) : ''}</p></div>`;
                 item.addEventListener('click', () => playFromSearch(ch.name, ch.url, 'Live Now'));
                 section.appendChild(item);
             });
@@ -2856,7 +2997,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 const ratio = displaySettings.ratio === '169' ? '16:9' :
                               displaySettings.ratio === '43' ? '4:3' :
                               displaySettings.ratio.charAt(0).toUpperCase() + displaySettings.ratio.slice(1);
-                summary.textContent = rot + ' • ' + ratio;
+                summary.textContent = rot + ' \u2022 ' + ratio;
             }
         }
 
@@ -2912,7 +3053,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(displaySettings));
             applyDisplaySettings();
             await applyOrientationPreference();
-            displaySettingsStatus.textContent = '✓ Display settings saved';
+            displaySettingsStatus.textContent = '\u2713 Display settings saved';
             setTimeout(() => {
                 displaySettingsStatus.textContent = '';
                 displaySettingsPage.style.display = 'none';
@@ -3057,8 +3198,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                     const ch = list.find(c => c.url === saved.url);
                     // Restore metadata immediately; playback begins only for a channel the user previously chose.
                     if (inlineChannelName) inlineChannelName.textContent = ch.name || saved.name || 'Last channel';
-                    if (inlineChannelTime) inlineChannelTime.textContent = 'Last channel • Tap to resume';
-                    if (inlinePlayerHint) inlinePlayerHint.textContent = 'Last channel saved — tap a channel to play';
+                    if (inlineChannelTime) inlineChannelTime.textContent = 'Last channel \u2022 Tap to resume';
+                    if (inlinePlayerHint) inlinePlayerHint.textContent = 'Last channel saved \u2014 tap a channel to play';
                     return;
                 }
             } catch(e) {}
@@ -3159,22 +3300,28 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
     const touch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
     const tvUA=/Android TV|GoogleTV|Google TV|SmartTV|Smart-TV|HbbTV|BRAVIA|AFT[A-Z0-9]*|Tizen|Web0S|webOS|NetCast|Viera|AppleTV|Roku/i.test(ua);
     const carUA=/Android Auto|CarPlay|automotive/i.test(ua);
+    const ipadOS=/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;
+    const desktopUA=!/Mobile|iPhone|iPod|iPad|Android|Tablet|Silk|PlayBook/i.test(ua)&&!ipadOS;
     let mode;
     if(carUA) mode='car';
     else if(tvUA || (w>=1500 && h>=700 && !touch && /Android/i.test(ua))) mode='tv';
-    else if(/iPad|Tablet|PlayBook|Silk/i.test(ua) || (touch && w>=700 && w<=1250)) mode='tablet';
+    else if(ipadOS || /iPad|Tablet|PlayBook|Silk/i.test(ua) || (touch && !desktopUA && w>=700 && w<=1250)) mode='tablet';
     else if(w<=650 || /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua)) mode='mobile';
     else if(w<=1200) mode='laptop';
     else mode='desktop';
+    const vh=Math.round((window.visualViewport&&window.visualViewport.height)||window.innerHeight||0);
+    if(vh>200) root.style.setProperty('--app-h',vh+'px');
     root.dataset.device=mode;
     root.dataset.touch=touch?'yes':'no';
     root.dataset.screenWidth=String(w);
     const names={mobile:'Mobile layout',tablet:'Tablet layout',laptop:'Laptop layout',desktop:'Desktop layout',tv:'TV / Remote layout',car:'Car screen layout'};
-    if(label) label.textContent=names[mode]+' · Auto';
-    if(badge) badge.title='Detected: '+names[mode]+' ('+w+'×'+h+')';
+    if(label) label.textContent=names[mode]+' \u00b7 Auto';
+    if(badge) badge.title='Detected: '+names[mode]+' ('+w+'\u00d7'+h+')';
   }
   let resizeTimer;
   window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(detect,120)});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(detect,60)});
+  window.addEventListener('pageshow',()=>setTimeout(detect,50));
   window.addEventListener('orientationchange',()=>setTimeout(detect,180));
   detect();
   /* Keep keyboard / Android TV remote navigation visible and usable. */
@@ -3203,8 +3350,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   let svScanRunning=false;
   function setTuneStatus(text,state='ready'){
     const el=byId('svAutoTuneStatus'),badge=byId('svAutoTuneBadge');
-    if(el){el.textContent=(state==='running'?'● Tuning in background… ':state==='done'?'● ':'● ')+text;el.style.color=state==='running'?'#d97706':state==='done'?'#16803d':'#718096';}
-    if(badge){badge.textContent=state==='running'?'Scanning…':state==='done'?'Done':'Ready';}
+    if(el){el.textContent=(state==='running'?'\u25cf Tuning in background\u2026 ':state==='done'?'\u25cf ':'\u25cf ')+text;el.style.color=state==='running'?'#d97706':state==='done'?'#16803d':'#718096';}
+    if(badge){badge.textContent=state==='running'?'Scanning\u2026':state==='done'?'Done':'Ready';}
     try{localStorage.setItem('sv_autotune_status',JSON.stringify({text,state,at:Date.now()}));}catch(e){}
   }
   function loadTuneStatus(){
@@ -3247,11 +3394,11 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   }
   async function scanChannels(){
     if(svScanRunning){setTuneStatus('Scan already running','running');return;}
-    const list=getChannels().slice(); if(!list.length){setTuneStatus('Playlist not loaded','ready');openNotice('Auto channel scan','Load a playlist first: Settings → Data Usage & Playlist URL.');return;}
+    const list=getChannels().slice(); if(!list.length){setTuneStatus('Playlist not loaded','ready');openNotice('Auto channel scan','Load a playlist first: Settings \u2192 Data Usage & Playlist URL.');return;}
     svScanRunning=true;setTuneStatus('Starting scan (5 at a time)','running');
     const status=window.svChannelStatus=window.svChannelStatus||{};
     const tally={};let checked=0,cursor=0;
-    const summary=()=>{const g=k=>tally[k]||0;return (g('ok')+g('reachable'))+' ok · '+g('unsupported')+' format · '+g('unavailable')+' not found · '+g('mixed')+' http-blocked · '+g('network')+' network · '+g('unverified')+' unverified';};
+    const summary=()=>{const g=k=>tally[k]||0;return (g('ok')+g('reachable'))+' ok \u00b7 '+g('unsupported')+' format \u00b7 '+g('unavailable')+' not found \u00b7 '+g('mixed')+' http-blocked \u00b7 '+g('network')+' network \u00b7 '+g('unverified')+' unverified';};
     const worker=async()=>{
       while(cursor<list.length){
         const ch=list[cursor++];
@@ -3265,9 +3412,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
       // Nothing is hidden or deleted: results only add small status labels to channel rows.
       try{localStorage.removeItem('sv_unavailable_channels');}catch(e){}
       refreshList();
-      setTuneStatus('Last scan · '+checked+' tested · '+summary(),'done');
+      setTuneStatus('Last scan \u00b7 '+checked+' tested \u00b7 '+summary(),'done');
       const cs=byId('channelScanState');if(cs)cs.textContent='Auto-Tune done';
-    }catch(e){setTuneStatus('Scan stopped · try again','ready');}
+    }catch(e){setTuneStatus('Scan stopped \u00b7 try again','ready');}
     finally{svScanRunning=false;}
   }
   function externalPlayer(){
@@ -3277,7 +3424,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
     const android=/Android/i.test(navigator.userAgent);
     const btns=[];
     if(android){btns.push('<button id="svIntent" style="padding:10px 15px;border:0;border-radius:10px;background:#1769e0;color:#fff">Open external app</button>');}
-    const box=openNotice('Open in External Player','<p>Selected channel:</p><p style="overflow-wrap:anywhere;font-weight:600">'+(typeof currentChannelName!=='undefined'?String(currentChannelName):'Live channel')+'</p><p>Device ke hisaab se VLC ya doosre compatible player mein khol sakte hain. Har browser/app external playback support nahi karta.</p><p style="font-size:12px;color:#667085">Stream URL ko copy karke VLC → Open Network Stream mein paste karna bhi option hai.</p>',btns.concat(['<button id="svCopyUrl" style="padding:10px 15px;border:0;border-radius:10px;background:#e9edf4">Copy stream URL</button>']));
+    const box=openNotice('Open in External Player','<p>Selected channel:</p><p style="overflow-wrap:anywhere;font-weight:600">'+(typeof currentChannelName!=='undefined'?String(currentChannelName):'Live channel')+'</p><p>Device ke hisaab se VLC ya doosre compatible player mein khol sakte hain. Har browser/app external playback support nahi karta.</p><p style="font-size:12px;color:#667085">Stream URL ko copy karke VLC \u2192 Open Network Stream mein paste karna bhi option hai.</p>',btns.concat(['<button id="svCopyUrl" style="padding:10px 15px;border:0;border-radius:10px;background:#e9edf4">Copy stream URL</button>']));
     const intent=byId('svIntent'); if(intent)intent.onclick=()=>{location.href='intent://'+url.replace(/^https?:\/\//,'')+'#Intent;type=video/*;action=android.intent.action.VIEW;end';};
     const copy=byId('svCopyUrl'); if(copy)copy.onclick=async()=>{try{await navigator.clipboard.writeText(url);copy.textContent='Copied';}catch(e){openNotice('Copy stream URL','Clipboard permission nahi mili. URL ko manually copy karein:<p style="overflow-wrap:anywhere">'+safe+'</p>')}};
   }
@@ -3337,12 +3484,58 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   });
 
   // "Filters" chip collapses / expands the inline filter panel on tablet+ (overlay behaviour on phones is unchanged)
-  const fbtn=$('openFilterBtn'), col=$('browserCol');
-  if(fbtn&&col) fbtn.addEventListener('click',()=>{
-    if(!wide()) return;
-    const collapsed=col.classList.toggle('filters-collapsed');
-    fbtn.setAttribute('aria-expanded',collapsed?'false':'true');
+  // Categories / Language buttons each open the filter panel showing only their own section.
+  const fbtn=$('openFilterBtn'), lbtn=$('openLanguageBtn'), col=$('browserCol'), fpanel=$('filterPage'), ftitle=$('filterPageTitle');
+  function openFilterPanel(view){
+    if(!fpanel) return;
+    const same = fpanel.dataset.view===view;
+    fpanel.dataset.view=view;
+    if(ftitle) ftitle.textContent = view==='lang' ? 'Language' : 'Categories';
+    if(wide() && col){
+      const collapse = same && !col.classList.contains('filters-collapsed');
+      col.classList.toggle('filters-collapsed',collapse);
+      if(fbtn) fbtn.setAttribute('aria-expanded',(!collapse&&view==='cat')?'true':'false');
+      if(lbtn) lbtn.setAttribute('aria-expanded',(!collapse&&view==='lang')?'true':'false');
+    } else {
+      toggleSubRow(view);
+    }
+  }
+  // Phone: tapping Categories / Language shows a one-line chip list (like Watched / Favourite)
+  const subRow=$('svSubRow');
+  let subView=null;
+  function renderSubRow(){
+    if(!subRow||!subView) return;
+    const src=document.querySelector(subView==='cat'?'#categoryFilterChips':'#languageFilterChips');
+    subRow.innerHTML='';
+    [...(src?src.querySelectorAll('.filter-chip'):[])].forEach(c=>{
+      const b=document.createElement('button');
+      b.type='button'; b.className='chip'+(c.classList.contains('active')?' active':'');
+      b.textContent=(c.dataset.value||c.textContent).trim(); b.dataset.value=b.textContent;
+      b.setAttribute('role','option'); b.setAttribute('aria-selected',c.classList.contains('active')?'true':'false');
+      subRow.appendChild(b);
+    });
+    if(!subRow.children.length){ const e=document.createElement('span'); e.style.cssText='color:#748094;font-size:13px;padding:6px 4px'; e.textContent='Playlist load hone ke baad options aayenge'; subRow.appendChild(e); }
+  }
+  function closeSubRow(){ subView=null; if(subRow){ subRow.hidden=true; } [fbtn,lbtn].forEach(b=>b&&b.classList.remove('sub-open')); }
+  function toggleSubRow(view){
+    if(!subRow) return;
+    if(subView===view){ closeSubRow(); return; }
+    subView=view; renderSubRow(); subRow.hidden=false; subRow.scrollLeft=0;
+    if(fbtn) fbtn.classList.toggle('sub-open',view==='cat');
+    if(lbtn) lbtn.classList.toggle('sub-open',view==='lang');
+  }
+  if(subRow) subRow.addEventListener('click',e=>{
+    const b=e.target.closest('.chip'); if(!b) return;
+    const src=document.querySelector(subView==='cat'?'#categoryFilterChips':'#languageFilterChips');
+    const target=[...src.querySelectorAll('.filter-chip')].find(c=>(c.dataset.value||c.textContent).trim()===b.dataset.value);
+    if(target) target.click();
+    if(subView==='cat') closeSubRow(); else renderSubRow();
   });
+  // tablet / desktop / TV: start with the filter panel folded away; Categories / Language open it
+  if(col) col.classList.add('filters-collapsed');
+  if(fbtn) fbtn.setAttribute('aria-expanded','false'); if(lbtn) lbtn.setAttribute('aria-expanded','false');
+  if(fbtn) fbtn.addEventListener('click',()=>openFilterPanel('cat'));
+  if(lbtn) lbtn.addEventListener('click',()=>openFilterPanel('lang'));
 
   // Header "Playlist" button opens the same page as Settings -> Data Usage & Playlist URL
   $('headerPlaylistBtn')?.addEventListener('click',()=>$('dataUsageBtn')?.click());
@@ -3372,7 +3565,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
   // Desktop player controls (use the existing player functions)
   const v=$('inlineVideo');
-  const upd=()=>{ if(!v) return; const p=$('dcPlay'),m=$('dcMute'); if(p){ p.textContent=v.paused?'▶':'⏸'; } if(m){ m.textContent=v.muted?'🔇':'🔊'; } };
+  const upd=()=>{ if(!v) return; const p=$('dcPlay'),m=$('dcMute'); if(p){ p.textContent=v.paused?'\u25b6':'\u23f8'; } if(m){ m.textContent=v.muted?'\ud83d\udd07':'\ud83d\udd0a'; } };
   ['play','pause','volumechange','loadedmetadata'].forEach(ev=>v&&v.addEventListener(ev,upd)); upd();
   $('dcPlay')?.addEventListener('click',e=>{ e.stopPropagation(); if(!v.src&&!v.currentSrc) return; v.paused?v.play().catch(()=>{}):v.pause(); });
   $('dcMute')?.addEventListener('click',e=>{ e.stopPropagation(); v.muted=!v.muted; });
@@ -3414,7 +3607,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
 <!-- SanTV category-wise channel numbers and category merge -->
 <style>#svMapPage{position:fixed;inset:0;z-index:9000;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svMapPage input,#svMapPage select{padding:10px;border:1px solid #ccd3df;border-radius:9px;max-width:100%;background:white;color:#172033}#svMapPage input[type=checkbox]{width:20px;height:20px;padding:0;vertical-align:middle;margin-right:8px}#svMapPage button{padding:10px 14px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700}#svMapPage label{display:block;margin:8px 0}#svMapPage .sv-grey{background:#e9edf4;color:#172033}#svMapRows,#svCatNums,#svDupes{display:grid;gap:8px;margin:10px 0}.sv-maprow,.sv-card{display:grid;grid-template-columns:1fr 82px;gap:8px;align-items:center;padding:10px;background:white;border:1px solid #e1e6ee;border-radius:12px}.sv-card{display:flex;justify-content:space-between}.sv-maprow small{display:block;color:#687386;margin-top:3px}.sv-chnum{display:inline-block;min-width:22px;padding:1px 6px;margin-right:6px;border-radius:6px;background:#b02b3d;color:#fff;font:700 11px system-ui;text-align:center;vertical-align:middle}#svNumToast{position:fixed;z-index:99999;top:8%;left:50%;transform:translateX(-50%);background:#111;color:#fff;border:2px solid #b02b3d;border-radius:14px;padding:14px 20px;font:700 24px system-ui;display:none;max-width:90vw;text-align:center}</style>
-<div id="svMapPage"><div style="display:flex;align-items:center;gap:12px"><button id="svMapBack">← Back</button><h2 style="margin:8px 0">Channel Numbers & Category Merge</h2></div>
+<div id="svMapPage"><div style="display:flex;align-items:center;gap:12px"><button id="svMapBack">&#x2190; Back</button><h2 style="margin:8px 0">Channel Numbers & Category Merge</h2></div>
 <h3>Auto channel numbers</h3>
 <label><input type="checkbox" id="svAutoNum">Auto channel numbers: poori playlist 1 se total tak (category ek ke baad ek)</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="svRenumber">Renumber now</button><button id="svClearNums" class="sv-grey">Manual numbers clear</button></div>
@@ -3424,7 +3617,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 <label><input type="checkbox" id="svStrict">Strict: jinka test confirm nahi hua (unverified) wo bhi hide</label>
 <small id="svHideInfo"></small>
 <h3>Category merge</h3>
-<label><input type="checkbox" id="svAutoMerge">Duplicate category names auto merge (Movie / MOVIES / Movies HD → Movies)</label>
+<label><input type="checkbox" id="svAutoMerge">Duplicate category names auto merge (Movie / MOVIES / Movies HD &#x2192; Movies)</label>
 <div id="svDupes"></div><button id="svMergeAll">Merge all duplicates</button>
 <h3>Saari categories (IPTV ki default)</h3>
 <p>Jitni categories merge karni hain unhe tick karein, neeche folder ka naam likhein aur <b>Merge selected</b> dabayein.</p>
@@ -3513,14 +3706,14 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  const merged=d=>cfg.autoMerge||d.variants.every(v=>clean(v)===clean(d.label)||merges[v]);
  function renderUI(){
   $('svAutoNum').checked=!!cfg.autoNum;$('svAutoMerge').checked=!!cfg.autoMerge;$('svOnlyOk').checked=!!cfg.onlyOk;$('svStrict').checked=!!cfg.strict;
-  $('svHideInfo').textContent=Object.keys(window.svChannelStatus||{}).length?(window.svTotal||0)+' channels dikh rahe hain · '+(window.svHidden||0)+' hide (nahi chalte)':'Auto-tune scan ke baad ye filter lagega.';
+  $('svHideInfo').textContent=Object.keys(window.svChannelStatus||{}).length?(window.svTotal||0)+' channels dikh rahe hain \u00b7 '+(window.svHidden||0)+' hide (nahi chalte)':'Auto-tune scan ke baad ye filter lagega.';
   const st=window.svCatStats||[],dp=window.svDupes||[];
-  $('svCatNums').innerHTML=st.length?`<div class="sv-card"><b>Total</b><span>${window.svTotal||0} channels${cfg.autoNum?' · 1–'+(window.svTotal||0):''}</span></div>`+st.map(s=>`<div class="sv-card"><b>${esc(s.name)}</b><span>${s.count} channels${s.min?' · '+s.min+'–'+s.max:''}</span></div>`).join(''):'<small>Playlist load hote hi categories yahan dikhengi.</small>';
-  $('svDupes').innerHTML=dp.map((d,i)=>`<div class="sv-card"><span><b>${esc(d.label)}</b> ← ${esc(d.variants.filter(v=>v!==d.label).join(', '))}</span>${merged(d)?'<small>✓ Merged</small>':`<button data-mg="${i}">Merge</button>`}</div>`).join('')||'<small>Koi duplicate category name nahi mila ✓</small>';
+  $('svCatNums').innerHTML=st.length?`<div class="sv-card"><b>Total</b><span>${window.svTotal||0} channels${cfg.autoNum?' \u00b7 1\u2013'+(window.svTotal||0):''}</span></div>`+st.map(s=>`<div class="sv-card"><b>${esc(s.name)}</b><span>${s.count} channels${s.min?' \u00b7 '+s.min+'\u2013'+s.max:''}</span></div>`).join(''):'<small>Playlist load hote hi categories yahan dikhengi.</small>';
+  $('svDupes').innerHTML=dp.map((d,i)=>`<div class="sv-card"><span><b>${esc(d.label)}</b> \u2190 ${esc(d.variants.filter(v=>v!==d.label).join(', '))}</span>${merged(d)?'<small>\u2713 Merged</small>':`<button data-mg="${i}">Merge</button>`}</div>`).join('')||'<small>Koi duplicate category name nahi mila \u2713</small>';
   $('svMergeAll').style.display=dp.some(d=>!merged(d))?'':'none';
   $('svCategoryOptions').innerHTML=(window.svRawCats||[]).map(v=>`<option value="${esc(v)}">`).join('');
   const byTo={};Object.entries(merges).forEach(([from,to])=>{(byTo[to]=byTo[to]||[]).push(from)});
-  $('svMergeRows').innerHTML=Object.entries(byTo).map(([to,fr])=>`<div class="sv-card" style="display:block"><b>📁 ${esc(to)}</b> <small>(${fr.length} categories)</small><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${fr.map(f=>`<button class="sv-grey" style="padding:6px 10px;font-weight:600" data-delmerge="${esc(f)}" title="Is category ko folder se alag karein">${esc(f)} ✕</button>`).join('')}</div></div>`).join('')||'<small>Abhi koi merge folder nahi hai.</small>';
+  $('svMergeRows').innerHTML=Object.entries(byTo).map(([to,fr])=>`<div class="sv-card" style="display:block"><b>\ud83d\udcc1 ${esc(to)}</b> <small>(${fr.length} categories)</small><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${fr.map(f=>`<button class="sv-grey" style="padding:6px 10px;font-weight:600" data-delmerge="${esc(f)}" title="Is category ko folder se alag karein">${esc(f)} \u2715</button>`).join('')}</div></div>`).join('')||'<small>Abhi koi merge folder nahi hai.</small>';
   renderAllCats();
  }
  const sel=new Set();
@@ -3529,18 +3722,18 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   const q=clean($('svCatFilter').value),cnt=window.svRawCatCounts||new Map();
   const man=new Map(Object.entries(merges).map(([f,t])=>[clean(f),t]));
   const list=(window.svRawCats||[]).filter(c=>!q||clean(c).includes(q));
-  box.innerHTML=list.map(c=>{const m=man.get(clean(c));return `<label style="display:flex;align-items:center;gap:6px;margin:0;padding:6px 8px;border-radius:8px;background:#f7f8fb"><input type="checkbox" data-selcat="${esc(c)}" ${sel.has(c)?'checked':''}><span style="flex:1"><b>${esc(c)}</b> <small style="color:#687386">· ${cnt.get(c)||0} ch</small></span>${m?`<small style="color:#16803d">→ ${esc(m)}</small>`:''}</label>`}).join('')||'<small>Playlist load karein ya search badlein.</small>';
+  box.innerHTML=list.map(c=>{const m=man.get(clean(c));return `<label style="display:flex;align-items:center;gap:6px;margin:0;padding:6px 8px;border-radius:8px;background:#f7f8fb"><input type="checkbox" data-selcat="${esc(c)}" ${sel.has(c)?'checked':''}><span style="flex:1"><b>${esc(c)}</b> <small style="color:#687386">\u00b7 ${cnt.get(c)||0} ch</small></span>${m?`<small style="color:#16803d">\u2192 ${esc(m)}</small>`:''}</label>`}).join('')||'<small>Playlist load karein ya search badlein.</small>';
   updSel();
  }
  function updSel(){const el=$('svSelCount');if(el)el.textContent=sel.size?sel.size+' selected':''}
  function renderRows(){
   const q=clean($('svMapSearch').value);
-  $('svMapRows').innerHTML=allCh().filter(c=>!q||clean(c.name).includes(q)||clean(c.svCat).includes(q)).slice(0,300).map(c=>`<div class="sv-maprow"><div><b>${esc(c.name||'Unnamed channel')}</b><small>${esc(c.svCat||'Uncategorized')} · No. ${c.svNum||'-'}</small></div><input type="number" min="1" max="99999" placeholder="#" data-sv-key="${esc(chKey(c))}" value="${esc(nums[chKey(c)]||'')}" aria-label="Manual channel number"></div>`).join('')||'<p>Playlist load karein ya search badlein.</p>';
+  $('svMapRows').innerHTML=allCh().filter(c=>!q||clean(c.name).includes(q)||clean(c.svCat).includes(q)).slice(0,300).map(c=>`<div class="sv-maprow"><div><b>${esc(c.name||'Unnamed channel')}</b><small>${esc(c.svCat||'Uncategorized')} \u00b7 No. ${c.svNum||'-'}</small></div><input type="number" min="1" max="99999" placeholder="#" data-sv-key="${esc(chKey(c))}" value="${esc(nums[chKey(c)]||'')}" aria-label="Manual channel number"></div>`).join('')||'<p>Playlist load karein ya search badlein.</p>';
  }
  const toastEl=$('svNumToast');let tt;
  function toast(msg,ms,big){toastEl.style.fontSize=big?'24px':'15px';toastEl.textContent=msg;toastEl.style.display='block';clearTimeout(tt);tt=setTimeout(()=>toastEl.style.display='none',ms||1800)}
  function open(){if(!window.svCatStats)apply();$('svMapPage').style.display='flex';renderUI();if($('svManualBox').open)renderRows()}
- const settings=$('settingsPage');if(settings){const item=document.createElement('div');item.className='settings-item';item.innerHTML='<div class="settings-item-left">🔢 Channel Numbers & Category Merge</div><div class="settings-item-right">Manage ›</div>';item.addEventListener('click',open);settings.querySelector('.settings-list')?.appendChild(item)}
+ const settings=$('settingsPage');if(settings){const item=document.createElement('div');item.className='settings-item';item.innerHTML='<div class="settings-item-left">\ud83d\udd22 Channel Numbers & Category Merge</div><div class="settings-item-right">Manage \u203a</div>';item.addEventListener('click',open);settings.querySelector('.settings-list')?.appendChild(item)}
  $('svMapBack').onclick=()=>$('svMapPage').style.display='none';
  $('svMapSearch').addEventListener('input',renderRows);
  $('svManualBox').addEventListener('toggle',()=>{if($('svManualBox').open)renderRows()});
@@ -3549,10 +3742,10 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  $('svAutoMerge').onchange=e=>{cfg.autoMerge=e.target.checked;persist();refresh()};
  $('svOnlyOk').onchange=e=>{cfg.onlyOk=e.target.checked;persist();refresh()};
  $('svStrict').onchange=e=>{cfg.strict=e.target.checked;persist();refresh()};
- $('svRenumber').onclick=()=>{refresh();toast('✅ Channel numbers ready',1800)};
+ $('svRenumber').onclick=()=>{refresh();toast('\u2705 Channel numbers ready',1800)};
  $('svClearNums').onclick=()=>{nums={};persist();refresh();toast('Manual numbers clear ho gaye',1800)};
  const mergeDupe=d=>d.variants.forEach(v=>{if(v!==d.label)merges[v]=d.label});
- $('svMergeAll').onclick=()=>{(window.svDupes||[]).forEach(mergeDupe);persist();refresh();toast('✅ Duplicate categories merged',1800)};
+ $('svMergeAll').onclick=()=>{(window.svDupes||[]).forEach(mergeDupe);persist();refresh();toast('\u2705 Duplicate categories merged',1800)};
  $('svDupes').addEventListener('click',e=>{const b=e.target.closest('[data-mg]');if(!b)return;const d=(window.svDupes||[])[Number(b.dataset.mg)];if(d){mergeDupe(d);persist();refresh()}});
  $('svMergeAdd').onclick=()=>{const from=$('svMergeFrom').value.trim(),to=$('svMergeTo').value.trim();if(!from||!to){$('svMapStatus').textContent='Dono category names bharein.';return}merges[from]=to;$('svMergeFrom').value='';$('svMergeTo').value='';persist();refresh()};
  $('svCatFilter').addEventListener('input',renderAllCats);
@@ -3566,7 +3759,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   let n=0;sel.forEach(c=>{if(clean(c)!==clean(to)){merges[c]=to;n++}});
   Object.keys(merges).forEach(k=>{if(clean(k)===clean(to))delete merges[k]});
   sel.clear();$('svSelTo').value='';persist();refresh();
-  $('svMapStatus').textContent='';toast('✅ '+n+' categories "'+to+'" mein merge ho gayi',2200);
+  $('svMapStatus').textContent='';toast('\u2705 '+n+' categories "'+to+'" mein merge ho gayi',2200);
  };
  $('svMergeRows').addEventListener('click',e=>{const b=e.target.closest('[data-delmerge]');if(b){delete merges[b.dataset.delmerge];persist();refresh()}});
  $('svMapSave').onclick=()=>{const ok=persist();refresh();$('svMapStatus').textContent=ok?'Settings saved on this device.':'Save nahi hua; browser storage check karein.'};
@@ -3575,7 +3768,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  try{const v=JSON.parse(localStorage.getItem(STKEY)||'null');if(v&&Date.now()-v.at<864e5&&!window.svChannelStatus)window.svChannelStatus=v.s}catch(e){}
  // After Auto-Tune finishes: re-apply category merge + numbering and tell the user.
  const badge=$('svAutoTuneBadge');let ran=false;
- if(badge)new MutationObserver(()=>{const t=badge.textContent.trim();if(/^scanning/i.test(t))ran=true;else if(t==='Done'&&ran){ran=false;saveStatus();refresh();toast('✅ Auto-tune done · '+(window.svHidden||0)+' non-working hide · numbers ready',3000)}}).observe(badge,{childList:true,characterData:true,subtree:true});
+ if(badge)new MutationObserver(()=>{const t=badge.textContent.trim();if(/^scanning/i.test(t))ran=true;else if(t==='Done'&&ran){ran=false;saveStatus();refresh();toast('\u2705 Auto-tune done \u00b7 '+(window.svHidden||0)+' non-working hide \u00b7 numbers ready',3000)}}).observe(badge,{childList:true,characterData:true,subtree:true});
  // Remote / keyboard number pad: works on the dashboard and in the player (1 .. total).
  function findNum(n){
   n=Number(n);const c=allCh().find(x=>x.svNum===n);
@@ -3584,7 +3777,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   return null;
  }
  let digits='',dt;
- function commit(){const n=digits;digits='';clearTimeout(dt);toastEl.style.display='none';if(!n)return;const c=findNum(n);toast(c?'CH '+n+' · '+(c.name||''):'Channel '+n+' not found',1500,!c)}
+ function commit(){const n=digits;digits='';clearTimeout(dt);toastEl.style.display='none';if(!n)return;const c=findNum(n);toast(c?'CH '+n+' \u00b7 '+(c.name||''):'Channel '+n+' not found',1500,!c)}
  document.addEventListener('keydown',e=>{
   if($('svMapPage').style.display==='flex'||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable)return;
   if(/^[0-9]$/.test(e.key)&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
@@ -3598,7 +3791,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
 <!-- SanTV proxy settings (Cloudflare Worker) -->
 <style>#svProxyPage{position:fixed;inset:0;z-index:9100;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svProxyPage input[type=text]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd3df;border-radius:9px;background:#fff;color:#172033;font-size:15px}#svProxyPage button{padding:12px 16px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700;font-size:14px}#svProxyPage .g{background:#e9edf4;color:#172033}#svProxyPage label{display:block;margin:10px 0}#svProxyPage input[type=checkbox]{width:20px;height:20px;vertical-align:middle;margin-right:8px}#svProxyPage button:focus-visible,#svProxyPage input:focus-visible{outline:3px solid #ffb400;outline-offset:2px}</style>
-<div id="svProxyPage"><div style="display:flex;align-items:center;gap:12px"><button id="svPxBack">← Back</button><h2 style="margin:8px 0">Proxy (Cloudflare Worker)</h2></div>
+<div id="svProxyPage"><div style="display:flex;align-items:center;gap:12px"><button id="svPxBack">&#x2190; Back</button><h2 style="margin:8px 0">Proxy (Cloudflare Worker)</h2></div>
 <p>Cloudflare Worker ka URL yahan paste karein. Agar sirf <b>https://naam.workers.dev</b> paste karenge to <b>/?url=</b> apne aap lag jaayega. Worker ko <b>?url=</b> ke baad stream ka link lena chahiye.</p>
 <input type="text" id="svPxUrl" placeholder="https://naam.workers.dev/?url=" autocapitalize="off" autocomplete="off" spellcheck="false">
 <label><input type="checkbox" id="svPxOn">Proxy chalu rakho</label>
@@ -3636,23 +3829,23 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   const u=norm($('svPxUrl').value);
   if(!u){st('Pehle Worker ka URL paste karein.',1);return}
   $('svPxUrl').value=u;save(u,$('svPxOn').checked,$('svPxFirst').checked);
-  st($('svPxOn').checked?'✅ Save ho gaya, proxy chalu hai.':'✅ Save ho gaya (proxy abhi band hai).');
+  st($('svPxOn').checked?'\u2705 Save ho gaya, proxy chalu hai.':'\u2705 Save ho gaya (proxy abhi band hai).');
  };
  $('svPxRemove').onclick=()=>{save('',false,false);$('svPxUrl').value='';$('svPxOn').checked=true;$('svPxFirst').checked=false;st('Proxy hata diya.')};
  $('svPxTest').onclick=async()=>{
   const u=norm($('svPxUrl').value);if(!u){st('Pehle Worker ka URL paste karein.',1);return}
   let target='';try{target=((typeof channels!=='undefined'&&channels[0])||{}).url||''}catch(e){}
   if(!target)target='https://example.com/';
-  st('Test chal raha hai…');
+  st('Test chal raha hai\u2026');
   try{
    const r=await Promise.race([fetch(u+encodeURIComponent(target),{cache:'no-store'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),9000))]);
    try{r.body&&r.body.cancel&&r.body.cancel()}catch(e){}
-   st(r.ok?'✅ Proxy chal raha hai (HTTP '+r.status+').':'⚠ Proxy ne HTTP '+r.status+' diya. Worker ka code ya URL check karein.',!r.ok);
-  }catch(e){st('❌ Proxy tak pahunch nahi paye: '+(e.message||e),1)}
+   st(r.ok?'\u2705 Proxy chal raha hai (HTTP '+r.status+').':'\u26a0 Proxy ne HTTP '+r.status+' diya. Worker ka code ya URL check karein.',!r.ok);
+  }catch(e){st('\u274c Proxy tak pahunch nahi paye: '+(e.message||e),1)}
  };
  $('svPxBack').onclick=()=>{$('svProxyPage').style.display='none'};
  const settings=$('settingsPage');
- if(settings){const item=document.createElement('div');item.className='settings-item';item.tabIndex=0;item.innerHTML='<div class="settings-item-left">🌐 Proxy (Cloudflare Worker)</div><div class="settings-item-right">Add ›</div>';item.addEventListener('click',open);item.addEventListener('keydown',e=>{if(e.key==='Enter')open()});settings.querySelector('.settings-list')?.appendChild(item)}
+ if(settings){const item=document.createElement('div');item.className='settings-item';item.tabIndex=0;item.innerHTML='<div class="settings-item-left">\ud83c\udf10 Proxy (Cloudflare Worker)</div><div class="settings-item-right">Add \u203a</div>';item.addEventListener('click',open);item.addEventListener('keydown',e=>{if(e.key==='Enter')open()});settings.querySelector('.settings-list')?.appendChild(item)}
 })();
 </script>
 
@@ -3669,7 +3862,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 #svPassGate .err{color:#b02b3d;min-height:20px;font-weight:700}
 @keyframes svShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 </style>
-<div id="svPassGate" role="dialog" aria-modal="true" aria-label="Settings password"><div class="box"><h3>🔒 Settings</h3><div style="color:#687386">Password daalein</div><input id="svPassIn" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"><div class="err" id="svPassErr"></div><div><button id="svPassOk">Open</button><button id="svPassCancel" class="g">Cancel</button></div></div></div>
+<div id="svPassGate" role="dialog" aria-modal="true" aria-label="Settings password"><div class="box"><h3>&#x1f512; Settings</h3><div style="color:#687386">Password daalein</div><input id="svPassIn" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;"><div class="err" id="svPassErr"></div><div><button id="svPassOk">Open</button><button id="svPassCancel" class="g">Cancel</button></div></div></div>
 <script>
 (function(){
  const $=id=>document.getElementById(id);
@@ -3698,7 +3891,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
 <!-- ===== SanTV: Live Sync (settings change once, every device updates live) ===== -->
 <style>#svSyncPage{position:fixed;inset:0;z-index:9100;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svSyncPage input[type=text]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd3df;border-radius:9px;background:#fff;color:#172033;font-size:15px}#svSyncPage button{padding:12px 16px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700;font-size:14px}#svSyncPage .g{background:#e9edf4;color:#172033}#svSyncPage button:focus-visible,#svSyncPage input:focus-visible{outline:3px solid #ffb400;outline-offset:2px}#svSyncToast{position:fixed;z-index:99998;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;border-radius:12px;padding:10px 16px;font:600 14px system-ui;display:none;max-width:90vw;text-align:center}</style>
-<div id="svSyncPage"><div style="display:flex;align-items:center;gap:12px"><button id="svSyBack">← Back</button><h2 style="margin:8px 0">Live Sync (sab devices)</h2></div>
+<div id="svSyncPage"><div style="display:flex;align-items:center;gap:12px"><button id="svSyBack">&#x2190; Back</button><h2 style="margin:8px 0">Live Sync (sab devices)</h2></div>
 <p>Yahan se jo bhi setting badlenge (category merge, channel numbers, proxy, playlist URL, display, sort) wo <b>sab devices par live</b> badal jayegi. Iske liye ek free Firebase Realtime Database chahiye.</p>
 <p><b>Database URL</b> (jaise <code>https://naam-default-rtdb.firebaseio.com</code>):</p>
 <input type="text" id="svSyUrl" placeholder="https://naam-default-rtdb.firebaseio.com" autocapitalize="off" autocomplete="off" spellcheck="false">
@@ -3724,11 +3917,11 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(tt);tt=setTimeout(()=>toastEl.style.display='none',2600)}
  function status(){
   const el=$('svSyStatus');if(!el)return;
-  const t=lastAt?' · last update '+new Date(lastAt).toLocaleTimeString():'';
+  const t=lastAt?' \u00b7 last update '+new Date(lastAt).toLocaleTimeString():'';
   if(!base()){el.textContent='Sync abhi band hai (URL set nahi).';el.style.color='#687386'}
-  else if(state==='live'){el.textContent='🟢 Live connected'+t+(admin?' · aap admin hain: aapke changes sab par jayenge.':'');el.style.color='#16803d'}
-  else if(state==='err'){el.textContent='🔴 Connect nahi ho paya. URL aur Firebase rules check karein (read/write true). Dobara try ho raha hai…';el.style.color='#b02b3d'}
-  else{el.textContent='Connect ho raha hai…';el.style.color='#687386'}
+  else if(state==='live'){el.textContent='\ud83d\udfe2 Live connected'+t+(admin?' \u00b7 aap admin hain: aapke changes sab par jayenge.':'');el.style.color='#16803d'}
+  else if(state==='err'){el.textContent='\ud83d\udd34 Connect nahi ho paya. URL aur Firebase rules check karein (read/write true). Dobara try ho raha hai\u2026';el.style.color='#b02b3d'}
+  else{el.textContent='Connect ho raha hai\u2026';el.style.color='#687386'}
  }
  async function push(){
   const b=base();if(!b||!admin)return;
@@ -3737,8 +3930,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   try{
    const r=await fetch(b+DOC,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:lastT,by:DEV,d})});
    if(!r.ok)throw new Error('HTTP '+r.status);
-   remoteEmpty=false;lastAt=Date.now();state='live';status();toast('☁️ Sab devices par update bhej diya');
-  }catch(e){state='err';status();toast('❌ Sync fail: '+(e.message||e))}
+   remoteEmpty=false;lastAt=Date.now();state='live';status();toast('\u2601\ufe0f Sab devices par update bhej diya');
+  }catch(e){state='err';status();toast('\u274c Sync fail: '+(e.message||e))}
  }
  function schedule(){if(!admin||!base()||applying)return;clearTimeout(pushT);pushT=setTimeout(push,600)}
  proto.setItem=function(k){const r=_set.apply(this,arguments);if(this===localStorage&&KEYS.indexOf(k)>=0)schedule();return r};
@@ -3761,7 +3954,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
     if(PROXYK.some(k=>changed.has(k))){try{const p=$('proxyUrlInput');if(p)p.value=rawGet('iptv_proxy')||''}catch(e){} if(window.svRefresh)try{window.svRefresh()}catch(e){}}
     if(changed.has('santv_sort')){const s=$('channelSort'),v=rawGet('santv_sort');if(s&&v){s.value=v;s.dispatchEvent(new Event('change'))}}
     if(changed.has('iptv_m3u_url')){const u=rawGet('iptv_m3u_url');try{if(u&&u!==lastPlaylistUrl)loadIPTV(u,true)}catch(e){console.error(e)}}
-    lastAt=Date.now();toast('⚙️ Settings live update ho gayi');
+    lastAt=Date.now();toast('\u2699\ufe0f Settings live update ho gayi');
    }
   }finally{applying=false}
  }
@@ -3790,7 +3983,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  window.svSyncAdminOn=function(){admin=true;status();if(loaded&&remoteEmpty)push()};
 
  const settings=$('settingsPage');
- if(settings){const item=document.createElement('div');item.className='settings-item';item.tabIndex=0;item.innerHTML='<div class="settings-item-left">☁️ Live Sync (sab devices)</div><div class="settings-item-right">Setup ›</div>';const open=()=>{$('svSyUrl').value=rawGet(URLKEY)||SV_SYNC_URL;status();$('svSyncPage').style.display='flex'};item.addEventListener('click',open);item.addEventListener('keydown',e=>{if(e.key==='Enter')open()});settings.querySelector('.settings-list')?.appendChild(item)}
+ if(settings){const item=document.createElement('div');item.className='settings-item';item.tabIndex=0;item.innerHTML='<div class="settings-item-left">\u2601\ufe0f Live Sync (sab devices)</div><div class="settings-item-right">Setup \u203a</div>';const open=()=>{$('svSyUrl').value=rawGet(URLKEY)||SV_SYNC_URL;status();$('svSyncPage').style.display='flex'};item.addEventListener('click',open);item.addEventListener('keydown',e=>{if(e.key==='Enter')open()});settings.querySelector('.settings-list')?.appendChild(item)}
  $('svSyBack').onclick=()=>{$('svSyncPage').style.display='none'};
  $('svSySave').onclick=()=>{
   let u=$('svSyUrl').value.trim();
@@ -3876,8 +4069,8 @@ details.dm-card summary{font-weight:700;cursor:pointer}
 .bottom-nav .dm-ico{font-size:21px;line-height:24px;height:24px;display:block}
 </style>
 <div id="dmPage">
- <div class="dm-top"><button id="dmBack" class="g">←</button><h2>Dashboard Manager</h2></div>
- <div class="dm-seg" id="dmSeg"><button data-s="ch" class="on">📺 Channels</button><button data-s="cat">🗂️ Categories</button><button data-s="lang">🌐 Languages</button><button data-s="nav">⬇️ Bottom Nav</button></div>
+ <div class="dm-top"><button id="dmBack" class="g">&#x2190;</button><h2>Dashboard Manager</h2></div>
+ <div class="dm-seg" id="dmSeg"><button data-s="ch" class="on">&#x1f4fa; Channels</button><button data-s="cat">&#x1f5c2;&#xfe0f; Categories</button><button data-s="lang">&#x1f310; Languages</button><button data-s="nav">&#x2b07;&#xfe0f; Bottom Nav</button></div>
  <div id="dmBody"></div>
 </div>
 <div id="dmToast"></div>
@@ -3893,7 +4086,7 @@ const kOf=c=>String(c.url||c.name||'').trim();
 const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
 const NAVSVG={};
 document.querySelectorAll('.bottom-nav .nav-item').forEach(a=>{const s=a.querySelector('svg');if(s)NAVSVG[a.dataset.nav]=s.outerHTML});
-const PLAYERS=[['','Auto (recommended – sab try karega)'],['hlsjs','HLS.js Player'],['native','Native HTML5 Player'],['proxy','Proxy / Worker Route (HLS.js)'],['external','External Player (VLC / MX)']];
+const PLAYERS=[['','Auto (recommended \u2013 sab try karega)'],['hlsjs','HLS.js Player'],['native','Native HTML5 Player'],['proxy','Proxy / Worker Route (HLS.js)'],['external','External Player (VLC / MX)']];
 const plName=v=>(PLAYERS.find(p=>p[0]===(v||''))||PLAYERS[0])[1].replace(/ \(.*\)$/,'');
 const plOpts=cur=>PLAYERS.map(p=>'<option value="'+p[0]+'"'+((cur||'')===p[0]?' selected':'')+'>'+esc(p[1])+'</option>').join('');
 const T=(id,label,mode)=>({id,label,icon:id,mode,match:'',keys:[],folders:[]});
@@ -3940,18 +4133,18 @@ window.applyFilters=function(src){if(src===channels)src=restrict();return _af.ca
 function draw(){try{renderChannels(applyFilters(channels))}catch(e){console.error(e)}}
 
 /* ---------- bottom nav + folder bar ---------- */
-const icon=t=>NAVSVG[t.icon]||'<span class="dm-ico">'+esc(t.icon||'📺')+'</span>';
+const icon=t=>NAVSVG[t.icon]||'<span class="dm-ico">'+esc(t.icon||'\ud83d\udcfa')+'</span>';
 function renderNav(){
  const nav=document.querySelector('.bottom-nav');if(!nav)return;
  nav.innerHTML=cfg.tabs.map(t=>'<a href="#" class="nav-item'+(t.id===active.id?' active':'')+'" data-nav="'+esc(t.id)+'">'+icon(t)+'<span>'+esc(t.label)+'</span></a>').join('');
 }
-const fico=f=>/^https?:/i.test(f.icon||'')?'<i><img src="'+esc(f.icon)+'" alt="" onerror="this.remove()"></i>':'<i>'+esc(f.icon||'📁')+'</i>';
+const fico=f=>/^https?:/i.test(f.icon||'')?'<i><img src="'+esc(f.icon)+'" alt="" onerror="this.remove()"></i>':'<i>'+esc(f.icon||'\ud83d\udcc1')+'</i>';
 function renderFolders(){
  let bar=$('dmFolderBar');const t=tab(active.id),fs=(t&&t.folders)||[];
  if(!bar){const lc=$('channelListContainer');if(!lc)return;bar=document.createElement('div');bar.id='dmFolderBar';lc.parentNode.insertBefore(bar,lc);
   bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const n=+b.dataset.f;active.folder=n<0?null:n;renderFolders();draw()})}
  bar.style.display=fs.length?'flex':'none';
- bar.innerHTML=fs.length?'<button data-f="-1" class="'+(active.folder==null?'on':'')+'"><i>🗂️</i>All</button>'+fs.map((f,i)=>'<button data-f="'+i+'" class="'+(active.folder===i?'on':'')+'">'+fico(f)+'<span>'+esc(f.name)+'</span></button>').join(''):'';
+ bar.innerHTML=fs.length?'<button data-f="-1" class="'+(active.folder==null?'on':'')+'"><i>\ud83d\uddc2\ufe0f</i>All</button>'+fs.map((f,i)=>'<button data-f="'+i+'" class="'+(active.folder===i?'on':'')+'">'+fico(f)+'<span>'+esc(f.name)+'</span></button>').join(''):'';
 }
 function showTab(id){
  if(!tab(id))id=cfg.tabs[0].id;
@@ -4002,15 +4195,15 @@ function stopPrev(){pTok++;kill()}
 function startPrev(c,pl){
  pl=pl||'';stopPrev();const v=$('dmVid'),st=$('dmPst');if(!v||!c||!c.url)return;
  try{const iv=$('inlineVideo');iv&&iv.pause()}catch(e){}
- if(pl==='external'){const s0=$('dmPst');if(s0){s0.className='';s0.textContent='ℹ️ External player — preview nahi'}return}
+ if(pl==='external'){const s0=$('dmPst');if(s0){s0.className='';s0.textContent='\u2139\ufe0f External player \u2014 preview nahi'}return}
  const cands=pl==='proxy'?[]:[c.url];
  if(pl!=='native'&&pl!=='hlsjs'){try{getProxyModes().forEach(m=>{if(m.wrap)cands.push(m.wrap(c.url))})}catch(e){}}
  if(!cands.length)cands.push(c.url);
- let i=0;st.className='';st.textContent='⏳ Check ho raha hai…';
- const next=()=>{i++;if(i<cands.length)go();else{st.className='bad';st.textContent='❌ Nahi chal raha'}};
+ let i=0;st.className='';st.textContent='\u23f3 Check ho raha hai\u2026';
+ const next=()=>{i++;if(i<cands.length)go();else{st.className='bad';st.textContent='\u274c Nahi chal raha'}};
  function go(){
   const att=++pTok;kill();let fin=false;
-  const done=g=>{if(att!==pTok||fin)return;fin=true;clearTimeout(pTimer);if(g){st.className='ok';st.textContent='✅ Chal raha hai'}else next()};
+  const done=g=>{if(att!==pTok||fin)return;fin=true;clearTimeout(pTimer);if(g){st.className='ok';st.textContent='\u2705 Chal raha hai'}else next()};
   pTimer=setTimeout(()=>done(false),8000);
   v.muted=true;
   v.onplaying=()=>done(true);
@@ -4034,7 +4227,7 @@ function folderTargets(){
  const r=[];
  cfg.tabs.forEach((t,ti)=>{
   if(t.mode==='premium'||t.mode==='manual')r.push({ti,fi:-1,label:t.label+' (poori list)',o:t});
-  t.folders.forEach((f,fi)=>r.push({ti,fi,label:t.label+' › '+f.name,o:f}));
+  t.folders.forEach((f,fi)=>r.push({ti,fi,label:t.label+' \u203a '+f.name,o:f}));
  });
  return r;
 }
@@ -4042,17 +4235,17 @@ function renderCh(){
  const list=CH();
  const sel=list.find(c=>kOf(c)===selKey);
  body().innerHTML='<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
- +'<b id="dmName">'+(sel?esc(sel.name):'— channel list se chuno —')+'</b>'
+ +'<b id="dmName">'+(sel?esc(sel.name):'\u2014 channel list se chuno \u2014')+'</b>'
  +'<label>Category<select id="dmCat">'+opts(allCats(),sel?chCat(sel):'')+'</select></label>'
  +'<label>Language<select id="dmLang">'+opts(allLangs(),sel?chLang(sel):'')+'</select></label>'
- +'<label>🎬 Player (ye channel kis player se chale)<select id="dmPlayer">'+plOpts(sel&&cfg.assign[kOf(sel)]?cfg.assign[kOf(sel)].player:'')+'</select></label>'
+ +'<label>\ud83c\udfac Player (ye channel kis player se chale)<select id="dmPlayer">'+plOpts(sel&&cfg.assign[kOf(sel)]?cfg.assign[kOf(sel)].player:'')+'</select></label>'
  +'<label class="dm-chk" style="font-size:15px;padding:8px 0"><input type="checkbox" id="dmShow" '+(!sel||!(cfg.assign[kOf(sel)]&&cfg.assign[kOf(sel)].show===false)?'checked':'')+'> Dashboard par ye channel dikhayein (Show / Hide)</label>'
  +'<div id="dmFolds"></div>'
  +'<div class="dm-row"><button id="dmSave">Save</button><button id="dmSaveNext" class="g">Save & Next</button><button id="dmReset" class="g">Reset</button></div></div></div>'
- +'<details class="dm-card"><summary>⚡ Bulk: naam se sab channels ek saath</summary>'
+ +'<details class="dm-card"><summary>\u26a1 Bulk: naam se sab channels ek saath</summary>'
  +'<input id="dmKw" placeholder="Naam mein ye ho (jaise: zee, sony)"><select id="dmBCat"></select><select id="dmBLang"></select><select id="dmBPlayer"></select>'
  +'<button id="dmBulk">Apply</button><small id="dmBN"></small></details>'
- +'<input id="dmQ" placeholder="Channel search…" value="'+esc(q)+'" style="margin-bottom:8px"><div id="dmList"></div>';
+ +'<input id="dmQ" placeholder="Channel search\u2026" value="'+esc(q)+'" style="margin-bottom:8px"><div id="dmList"></div>';
  $('dmBCat').innerHTML=opts(allCats(),'').replace('(auto)','Category (change nahi)');
  $('dmBLang').innerHTML=opts(allLangs(),'').replace('(auto)','Language (change nahi)');
  $('dmBPlayer').innerHTML='<option value="">Player (change nahi)</option>'+PLAYERS.map(p=>'<option value="'+(p[0]||'auto')+'">'+esc(p[1])+'</option>').join('');
@@ -4071,7 +4264,7 @@ function drawList(){
  const box=$('dmList');if(!box)return;
  const t=low(q);let l=CH().filter(c=>!t||low(c.name).includes(t)||low(chCat(c)).includes(t));
  const n=l.length;l=l.slice(0,150);
- box.innerHTML=l.map(c=>{const k=kOf(c),o=cfg.assign[k],hidden=!!(o&&o.show===false);return '<div class="dm-item'+(k===selKey?' sel':'')+'" data-k="'+esc(k)+'"><b>'+esc(c.name||'Channel')+'</b><small>'+esc(chCat(c)||'-')+' · '+esc(chLang(c)||'-')+' · '+(hidden?'🙈 Hidden':'👁️ Shown')+(o&&o.player?' · 🎬 '+esc(plName(o.player)):'')+'</small>'+(o?'<span>✏️</span>':'')+'</div>'}).join('')+(n>150?'<small>Pehle 150 dikh rahe hain ('+n+' mile) — search karein.</small>':'');
+ box.innerHTML=l.map(c=>{const k=kOf(c),o=cfg.assign[k],hidden=!!(o&&o.show===false);return '<div class="dm-item'+(k===selKey?' sel':'')+'" data-k="'+esc(k)+'"><b>'+esc(c.name||'Channel')+'</b><small>'+esc(chCat(c)||'-')+' \u00b7 '+esc(chLang(c)||'-')+' \u00b7 '+(hidden?'\ud83d\ude48 Hidden':'\ud83d\udc41\ufe0f Shown')+(o&&o.player?' \u00b7 \ud83c\udfac '+esc(plName(o.player)):'')+'</small>'+(o?'<span>\u270f\ufe0f</span>':'')+'</div>'}).join('')+(n>150?'<small>Pehle 150 dikh rahe hain ('+n+' mile) \u2014 search karein.</small>':'');
 }
 function saveChannel(next){
  const c=CH().find(x=>kOf(x)===selKey);if(!c)return toast('Pehle channel chuno');
@@ -4083,7 +4276,7 @@ function saveChannel(next){
   const o=folderTargets()[+cb.dataset.ft].o,has=o.keys.includes(k);
   if(cb.checked&&!has)o.keys.push(k);else if(!cb.checked&&has)o.keys=o.keys.filter(x=>x!==k);
  });
- save();applyAll();toast('✅ Save ho gaya'+(player?' · Player: '+plName(player):''));
+ save();applyAll();toast('\u2705 Save ho gaya'+(player?' \u00b7 Player: '+plName(player):''));
  if(next){
   const t=low(q);const l=CH().filter(x=>!t||low(x.name).includes(t)||low(chCat(x)).includes(t));
   const i=l.findIndex(x=>kOf(x)===k);const n=l[i+1];if(n){selKey=kOf(n)}
@@ -4094,7 +4287,7 @@ function renderLists(kind){
  const isC=kind==='cat',names=isC?allCats():allLangs(),hid=isC?cfg.hideCats:cfg.hideLangs,cust=isC?cfg.cats:cfg.langs;
  const cnt={};CH().forEach(c=>{const v=low(isC?chCat(c):chLang(c));cnt[v]=(cnt[v]||0)+1});
  body().innerHTML='<div class="dm-card"><div class="dm-row"><input id="dmNew" placeholder="Naya '+(isC?'category':'language')+' naam" style="flex:1"><button id="dmAdd">+ Add</button></div></div>'
- +names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+(h?';opacity:.5':'')+'"><b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' ch</small><button class="g sm" data-ren="'+i+'">✏️</button><button class="g sm" data-hid="'+i+'">'+(h?'Show':'Hide')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">🗑</button>':'')+'</div>'}).join('');
+ +names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+(h?';opacity:.5':'')+'"><b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' ch</small><button class="g sm" data-ren="'+i+'">\u270f\ufe0f</button><button class="g sm" data-hid="'+i+'">'+(h?'Show':'Hide')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">\ud83d\uddd1</button>':'')+'</div>'}).join('');
  body().dataset.names=JSON.stringify(names);
 }
 function listAction(kind,e){
@@ -4116,16 +4309,16 @@ function listAction(kind,e){
  save();applyAll();renderLists(kind);
 }
 function renderNavEd(){
- body().innerHTML='<div class="dm-card"><small>Icon: emoji likho (🎬) ya preset: home / live / free / premium / trending. Mode: <b>All</b> = sab, <b>Free</b>, <b>Premium</b>, <b>Manual</b> = sirf keywords/channels jo aap chuno. Folder = tab ke andar brand (Zee, Sony). Keywords comma se alag.</small></div>'
+ body().innerHTML='<div class="dm-card"><small>Icon: emoji likho (\ud83c\udfac) ya preset: home / live / free / premium / trending. Mode: <b>All</b> = sab, <b>Free</b>, <b>Premium</b>, <b>Manual</b> = sirf keywords/channels jo aap chuno. Folder = tab ke andar brand (Zee, Sony). Keywords comma se alag.</small></div>'
  +cfg.tabs.map((t,i)=>'<div class="dm-card" data-t="'+i+'"><div class="dm-row"><input data-f="icon" value="'+esc(t.icon)+'" style="width:84px"><input data-f="label" value="'+esc(t.label)+'" style="flex:1"></div>'
  +'<select data-f="mode">'+['all','free','premium','manual'].map(m=>'<option value="'+m+'"'+(t.mode===m?' selected':'')+'>'+cap(m)+'</option>').join('')+'</select>'
- +'<input data-f="match" placeholder="Keywords (zee, sony) — is tab mein auto aayenge" value="'+esc(t.match)+'">'
- +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="🎬 / logo URL" style="width:100px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="delf">🗑</button></div>').join('')+'<button class="g sm" data-act="addf">+ Folder</button></div>'
- +'<div class="dm-row"><button class="g sm" data-act="up">↑</button><button class="g sm" data-act="down">↓</button><button class="g sm" data-act="delt">🗑 Tab hatao</button></div></div>').join('')
+ +'<input data-f="match" placeholder="Keywords (zee, sony) \u2014 is tab mein auto aayenge" value="'+esc(t.match)+'">'
+ +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:100px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<button class="g sm" data-act="addf">+ Folder</button></div>'
+ +'<div class="dm-row"><button class="g sm" data-act="up">\u2191</button><button class="g sm" data-act="down">\u2193</button><button class="g sm" data-act="delt">\ud83d\uddd1 Tab hatao</button></div></div>').join('')
  +'<div class="dm-row"><button id="dmAddTab">+ Naya Tab</button><button id="dmDefTabs" class="g">Default tabs wapas</button></div>';
 }
 function navEvent(e){
- if(e.target.id==='dmAddTab'){if(cfg.tabs.length>=7)return toast('Max 7 tabs');cfg.tabs.push({id:'t'+Date.now().toString(36),label:'New',icon:'⭐',mode:'manual',match:'',keys:[],folders:[]});save();applyAll();return renderNavEd()}
+ if(e.target.id==='dmAddTab'){if(cfg.tabs.length>=7)return toast('Max 7 tabs');cfg.tabs.push({id:'t'+Date.now().toString(36),label:'New',icon:'\u2b50',mode:'manual',match:'',keys:[],folders:[]});save();applyAll();return renderNavEd()}
  if(e.target.id==='dmDefTabs'){if(confirm('Default 5 tabs wapas?')){cfg.tabs=DEF().tabs;save();applyAll();renderNavEd()}return}
  const card=e.target.closest('[data-t]');if(!card)return;const ti=+card.dataset.t,t=cfg.tabs[ti];
  if(e.type==='change'||e.type==='input'){
@@ -4134,7 +4327,7 @@ function navEvent(e){
   save();if(e.type==='change'){applyAll();if(f==='mode')renderNavEd()}return;
  }
  const act=e.target.dataset.act;if(!act)return;
- if(act==='addf')t.folders.push({name:'Folder',icon:'📁',match:'',keys:[]});
+ if(act==='addf')t.folders.push({name:'Folder',icon:'\ud83d\udcc1',match:'',keys:[]});
  else if(act==='delf')t.folders.splice(+e.target.closest('[data-fo]').dataset.fo,1);
  else if(act==='up'&&ti>0)[cfg.tabs[ti-1],cfg.tabs[ti]]=[cfg.tabs[ti],cfg.tabs[ti-1]];
  else if(act==='down'&&ti<cfg.tabs.length-1)[cfg.tabs[ti+1],cfg.tabs[ti]]=[cfg.tabs[ti],cfg.tabs[ti+1]];
@@ -4155,7 +4348,7 @@ body().addEventListener('click',e=>{
    const kw=low($('dmKw').value).split(',').map(s=>s.trim()).filter(Boolean),cat=$('dmBCat').value,lang=$('dmBLang').value,bpl=$('dmBPlayer').value;
    if(!kw.length||(!cat&&!lang&&!bpl))return toast('Keyword + category/language/player chuno');
    let n=0;CH().forEach(c=>{if(kw.some(w=>low(c.name).includes(w))){const k=kOf(c),o=cfg.assign[k]||{cat:'',lang:''};if(cat)o.cat=cat;if(lang)o.lang=lang;if(bpl)o.player=bpl==='auto'?'':bpl;cfg.assign[k]=o;n++}});
-   save();applyAll();toast('✅ '+n+' channels update');renderCh();
+   save();applyAll();toast('\u2705 '+n+' channels update');renderCh();
   }
  }else if(sec==='nav')navEvent(e);else listAction(sec,e);
 });
@@ -4172,7 +4365,7 @@ body().addEventListener('change',e=>{
 $('dmBack').onclick=()=>{stopPrev();$('dmPage').style.display='none'};
 function open(){$('dmPage').style.display='flex';render()}
 const sp=$('settingsPage');
-if(sp){const it=document.createElement('div');it.className='settings-item';it.innerHTML='<div class="settings-item-left">🎛️ Dashboard Manager (Tabs, Category, Language)</div><div class="settings-item-right">Open ›</div>';it.addEventListener('click',open);const l=sp.querySelector('.settings-list');if(l)l.insertBefore(it,l.firstChild)}
+if(sp){const it=document.createElement('div');it.className='settings-item';it.innerHTML='<div class="settings-item-left">\ud83c\udf9b\ufe0f Dashboard Manager (Tabs, Category, Language)</div><div class="settings-item-right">Open \u203a</div>';it.addEventListener('click',open);const l=sp.querySelector('.settings-list');if(l)l.insertBefore(it,l.firstChild)}
 
 /* ---------- start ---------- */
 renderNav();renderFolders();
@@ -4182,16 +4375,11 @@ window.svDash={refresh:applyAll,open};
 </script>
 <!-- ===== /SanTV Dashboard Manager ===== -->
 
-</body>
-</html>
-<!-- SanTV: F key = real browser full screen (hides browser bars) -->
+
+<!-- SanTV: F key = real browser full screen -->
 <script>
 (function(){
   'use strict';
   const typing=el=>!!(el&&(el.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(el.tagName)));
   document.addEventListener('keydown',function(e){
     if(e.defaultPrevented||e.ctrlKey||e.altKey||e.metaKey||typing(e.target))return;
-    if(e.key&&e.key.toLowerCase()==='f'){e.preventDefault();e.stopPropagation();if(window.svToggleFs)window.svToggleFs();}
-  },true);
-})();
-</script>
