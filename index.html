@@ -1146,7 +1146,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (report) {
                     let added=[]; try { added=JSON.parse(localStorage.getItem('iptv_last_refresh_new_channels')||'[]'); if(!Array.isArray(added))added=[]; } catch(e){}
                     report.style.display='block';
-                    report.innerHTML = `<strong>ð Last refresh: ${added.length} new channel(s)</strong><div style="font-size:12px;color:#687386;margin:4px 0 8px">Older saved channels are kept even if today's playlist is smaller.</div>` + (added.length ? `<details><summary style="cursor:pointer">Show new channel names</summary><div style="max-height:180px;overflow:auto;margin-top:6px">${added.map((c,i)=>`<div style="padding:4px 0;border-bottom:1px solid #e5e7eb">${i+1}. ${escapeHtml(c.name||'Unnamed channel')}</div>`).join('')}</div></details>` : '<div style="font-size:13px">No new channels recorded yet, or the last refresh added none.</div>');
+                    report.innerHTML = `<strong>🆕 Last refresh: ${added.length} new channel(s)</strong><div style="font-size:12px;color:#687386;margin:4px 0 8px">Older saved channels are kept even if today's playlist is smaller.</div>` + (added.length ? `<details><summary style="cursor:pointer">Show new channel names</summary><div style="max-height:180px;overflow:auto;margin-top:6px">${added.map((c,i)=>`<div style="padding:4px 0;border-bottom:1px solid #e5e7eb">${i+1}. ${escapeHtml(c.name||'Unnamed channel')}</div>`).join('')}</div></details>` : '<div style="font-size:13px">No new channels recorded yet, or the last refresh added none.</div>');
                 }
             } else {
                 cacheInfo.style.display = 'none';
@@ -1775,6 +1775,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 playlistState = 'ready';
                 renderChannels(applyFilters(channels));
                 restoreLastChannelOrShowReady(channels);
+                // Start playback from the real playlist after it has loaded, if Home Autoplay is enabled.
+                autoStartFirstChannel(channels);
                 if (saveToCache) {
                     const saved = saveChannelsToCache(channels, url);
                     if (urlStatusMsg) {
@@ -1792,16 +1794,25 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             }
         }
 
-        // Auto-start a stream on launch / playlist refresh so the player never waits on a "select channel" prompt.
+        // Real Home Autoplay: run after cached or freshly loaded playlist data exists.
+        // Browsers commonly permit muted autoplay; sound may still require a user gesture.
         let autoStartAttempted = false;
         function autoStartFirstChannel(list = channels) {
-            if (autoStartAttempted || currentStreamUrl) return;
-            const first = (Array.isArray(list) ? list : []).find(c => c && /^https?:\/\//i.test(String(c.url || '')));
-            if (!first) return;
+            let enabled = true;
+            try { enabled = localStorage.getItem('santv_setting_autoplay_home_v1') !== 'false'; } catch (_) {}
+            if (!enabled || autoStartAttempted || currentStreamUrl) return;
+            const valid = (Array.isArray(list) ? list : []).filter(c => c && /^https?:\/\//i.test(String(c.url || '')));
+            if (!valid.length) return;
+            let first = null;
+            try {
+                const saved = JSON.parse(localStorage.getItem('santv_last_channel') || 'null');
+                if (saved && saved.url) first = valid.find(c => String(c.url) === String(saved.url)) || null;
+            } catch (_) {}
+            if (!first) first = valid[0];
             autoStartAttempted = true;
             setTimeout(() => {
-                if (!currentStreamUrl) playChannel(first.name || 'Live TV', first.url, first.time || 'Live Now');
-            }, 250);
+                if (!currentStreamUrl && enabled) playChannel(first.name || 'Live TV', first.url, first.time || 'Live Now');
+            }, 400);
         }
 
         // ================= PLAYER =================
@@ -3246,6 +3257,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 buildAutoFilters(channels);
                 renderChannels(applyFilters(channels));
                 restoreLastChannelOrShowReady(channels);
+                autoStartFirstChannel(cachedChannels);
             } else {
                 console.log('No cached playlist found; loading from the saved or default URL.');
                 channels = [];
@@ -3457,9 +3469,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
     byId('autoScanChannelsBtn')?.addEventListener('click',scanChannels);
     byId('dataUsageScanBtn')?.addEventListener('click', async ()=>{
       const status=byId('dataUsageScanStatus');
-      if(status) status.textContent='Scan startingâ¦ Channels will not be deleted.';
+      if(status) status.textContent='Scan starting… Channels will not be deleted.';
       await scanChannels();
-      if(status) status.textContent=(byId('svAutoTuneStatus')?.textContent||'Scan finished')+' Â· No channels were removed.';
+      if(status) status.textContent=(byId('svAutoTuneStatus')?.textContent||'Scan finished')+' · No channels were removed.';
     });
     loadTuneStatus();
     byId('externalPlayerBtn')?.addEventListener('click',externalPlayer);
@@ -4276,7 +4288,7 @@ function folderTargets(){
 function renderCh(){
  const list=CH();
  const sel=list.find(c=>kOf(c)===selKey);
- body().innerHTML=(categoryView?'<div class="dm-card"><div class="dm-row"><b style="flex:1">ð Category: '+esc(categoryView)+'</b><button class="g sm" id="dmClearCatView">All Categories</button></div><small>Is category ke channels neeche hain. Kisi channel par click karke uski details edit karein.</small></div>':'')+'<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
+ body().innerHTML=(categoryView?'<div class="dm-card"><div class="dm-row"><b style="flex:1">📂 Category: '+esc(categoryView)+'</b><button class="g sm" id="dmClearCatView">All Categories</button></div><small>Is category ke channels neeche hain. Kisi channel par click karke uski details edit karein.</small></div>':'')+'<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
  +'<b id="dmName">'+(sel?esc(sel.name):'\u2014 channel list se chuno \u2014')+'</b>'
  +'<label>Category<select id="dmCat">'+opts(allCats(),sel?chCat(sel):'')+'</select></label>'
  +'<label>Channel Language (Hindi / Marathi / Telugu etc.)<select id="dmLang">'+opts(allLangs(),sel?chLang(sel):'')+'</select></label>'
@@ -4329,9 +4341,9 @@ function renderLists(kind){
  const isC=kind==='cat',names=isC?allCats():allLangs(),hid=isC?cfg.hideCats:cfg.hideLangs,cust=isC?cfg.cats:cfg.langs;
  const cnt={};CH().forEach(c=>{const v=low(isC?chCat(c):chLang(c));cnt[v]=(cnt[v]||0)+1});
  const selectedHidden=cfg.hiddenLangs||[];
- body().innerHTML=(isC?'':'<div class="dm-card"><b>Language visibility â Dashboard</b><small>Har language ka naam aur uske channels ki count neeche hai. Agar language galat ho, Channels tab mein channel select karke Language dropdown se Hindi / Marathi / Telugu set karein aur Save karein. Jis language ko hide karenge, uske channels main Dashboard par nahi dikhenge; data delete nahi hoga.</small><div class="dm-row"><label class="dm-chk"><input type="checkbox" id="dmLangSelectAll"> Select all languages</label><button class="g sm" id="dmHideSelectedLangs">Hide selected</button><button class="g sm" id="dmShowSelectedLangs">Show selected</button><button class="g sm" id="dmShowAllLangs">Show all languages</button></div></div>')
+ body().innerHTML=(isC?'':'<div class="dm-card"><b>Language visibility — Dashboard</b><small>Har language ka naam aur uske channels ki count neeche hai. Agar language galat ho, Channels tab mein channel select karke Language dropdown se Hindi / Marathi / Telugu set karein aur Save karein. Jis language ko hide karenge, uske channels main Dashboard par nahi dikhenge; data delete nahi hoga.</small><div class="dm-row"><label class="dm-chk"><input type="checkbox" id="dmLangSelectAll"> Select all languages</label><button class="g sm" id="dmHideSelectedLangs">Hide selected</button><button class="g sm" id="dmShowSelectedLangs">Show selected</button><button class="g sm" id="dmShowAllLangs">Show all languages</button></div></div>')
  +'<div class="dm-card"><div class="dm-row"><input id="dmNew" placeholder="Naya '+(isC?'category':'language')+' naam" style="flex:1"><button id="dmAdd">+ Add</button></div></div>'
- +(!isC?'<input id="dmLangSearch" placeholder="Search language: Hindi, Marathi, Telugu..." style="margin-bottom:8px">':'')+names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n)),hiddenLang=!isC&&selectedHidden.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+((h||hiddenLang)?';opacity:.65':'')+'">'+(!isC?'<input type="checkbox" class="dmLangPick" data-lang-index="'+i+'" style="width:auto" aria-label="Select '+esc(n)+'">':'')+'<b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' channels'+(hiddenLang?' Â· ð« Dashboard hidden':'')+'</small>'+(isC?'<button class="g sm" data-open-cat="'+i+'">Open / Edit Channels</button>':'<button class="g sm" data-lang-visibility="'+i+'">'+(hiddenLang?'Show channels':'Hide channels')+'</button>')+'<button class="g sm" data-ren="'+i+'">âï¸ Rename</button><button class="g sm" data-hid="'+i+'">'+(h?'Show filter':'Hide filter')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">ð</button>':'')+'</div>'}).join('');
+ +(!isC?'<input id="dmLangSearch" placeholder="Search language: Hindi, Marathi, Telugu..." style="margin-bottom:8px">':'')+names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n)),hiddenLang=!isC&&selectedHidden.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+((h||hiddenLang)?';opacity:.65':'')+'">'+(!isC?'<input type="checkbox" class="dmLangPick" data-lang-index="'+i+'" style="width:auto" aria-label="Select '+esc(n)+'">':'')+'<b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' channels'+(hiddenLang?' · 🚫 Dashboard hidden':'')+'</small>'+(isC?'<button class="g sm" data-open-cat="'+i+'">Open / Edit Channels</button>':'<button class="g sm" data-lang-visibility="'+i+'">'+(hiddenLang?'Show channels':'Hide channels')+'</button>')+'<button class="g sm" data-ren="'+i+'">✏️ Rename</button><button class="g sm" data-hid="'+i+'">'+(h?'Show filter':'Hide filter')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">🗑</button>':'')+'</div>'}).join('');
  body().dataset.names=JSON.stringify(names);
 }
 function listAction(kind,e){
@@ -4370,7 +4382,7 @@ function renderNavEd(){
  +cfg.tabs.map((t,i)=>'<div class="dm-card" data-t="'+i+'"><div class="dm-row"><input data-f="icon" value="'+esc(t.icon)+'" style="width:84px"><input data-f="label" value="'+esc(t.label)+'" style="flex:1"></div>'
  +'<select data-f="mode">'+['all','free','premium','manual'].map(m=>'<option value="'+m+'"'+(t.mode===m?' selected':'')+'>'+cap(m)+'</option>').join('')+'</select>'
  +'<input data-f="match" placeholder="Keywords (zee, sony) \u2014 is tab mein auto aayenge" value="'+esc(t.match)+'">'
- +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:80px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="fup" title="Move folder up">â</button><button class="g sm" data-act="fdown" title="Move folder down">â</button><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<small>Folder order: â / â se first se last position tak move karein.</small><button class="g sm" data-act="addf">+ Folder</button></div>'
+ +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:80px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="fup" title="Move folder up">↑</button><button class="g sm" data-act="fdown" title="Move folder down">↓</button><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<small>Folder order: ↑ / ↓ se first se last position tak move karein.</small><button class="g sm" data-act="addf">+ Folder</button></div>'
  +'<div class="dm-row"><button class="g sm" data-act="up">\u2191</button><button class="g sm" data-act="down">\u2193</button><button class="g sm" data-act="delt">\ud83d\uddd1 Tab hatao</button></div></div>').join('')
  +'<div class="dm-row"><button id="dmAddTab">+ Naya Tab</button><button id="dmDefTabs" class="g">Default tabs wapas</button></div>';
 }
@@ -4580,19 +4592,11 @@ window.svDash={refresh:applyAll,open};
  // Persist the two switches; Classic TV Guide is connected to the actual guide tile.
  const autoRow=settingRow('Autoplay on Home'), autoInput=autoRow?.querySelector('input[type="checkbox"]');
  const guideRow=settingRow('Classic TV Guide'), guideInput=guideRow?.querySelector('input[type="checkbox"]');
- if(autoInput){autoInput.checked=get(KEYS.auto,'true')==='true';autoInput.setAttribute('aria-label','Autoplay first channel when playlist loads');autoInput.addEventListener('change',()=>{set(KEYS.auto,autoInput.checked);notice(autoInput.checked?'Autoplay on Home enabled':'Autoplay on Home disabled');});}
+ if(autoInput){autoInput.checked=get(KEYS.auto,'true')==='true';autoInput.setAttribute('aria-label','Autoplay first channel when playlist loads');autoInput.addEventListener('change',()=>{set(KEYS.auto,autoInput.checked);notice(autoInput.checked?'Autoplay on Home enabled':'Autoplay on Home disabled');if(autoInput.checked){try{const v=document.getElementById('inlineVideo');if(v&& (v.currentSrc||v.src)){v.muted=true;const p=v.play();if(p&&p.catch)p.catch(()=>{});}else if(typeof window.autoStartFirstChannel==='function')window.autoStartFirstChannel()}catch(_){}}});}
  function applyGuide(){const on=guideInput?guideInput.checked:true;document.documentElement.classList.toggle('sv-classic-guide-off',!on);}
  if(guideInput){guideInput.checked=get(KEYS.guide,'true')==='true';guideInput.setAttribute('aria-label','Show Classic TV Guide tile');guideInput.addEventListener('change',()=>{set(KEYS.guide,guideInput.checked);applyGuide();notice(guideInput.checked?'Classic TV Guide shown':'Classic TV Guide hidden');});}
  applyGuide();
- // If Autoplay is enabled, start the first channel only once after the playlist is rendered.
- let autoStarted=false;
- try{if(typeof window.renderChannels==='function'){
-   const original=window.renderChannels;
-   window.renderChannels=function(){const result=original.apply(this,arguments);if(!autoStarted&&get(KEYS.auto,'true')==='true'){
-     const rows=Array.from(document.querySelectorAll('#channelListContainer .channel-item')).filter(visible);
-     if(rows.length){autoStarted=true;setTimeout(()=>{try{rows[0].click()}catch(e){}},250)}
-   }return result;};
- }}catch(e){}
+ // Autoplay is triggered from the real cache/playlist startup paths above, not by monkey-patching the renderer.
  // Content language selections now persist instead of only showing a success alert.
  const langCards=Array.from(document.querySelectorAll('#contentLangPage .lang-card'));
  function cardKey(card){return (card.querySelector('small')?.textContent||card.querySelector('span')?.textContent||card.textContent).replace(/\s+/g,' ').trim().toLowerCase()}
@@ -4643,7 +4647,7 @@ window.svDash={refresh:applyAll,open};
  if(!list || $('svLowNetworkRow')) return;
  const row=document.createElement('div');
  row.className='settings-item';row.id='svLowNetworkRow';row.tabIndex=0;row.setAttribute('role','group');
- row.innerHTML='<div class="settings-item-left sv-low-copy"><strong>ð¶ Low Network Mode â All Channels</strong><span class="sv-low-sub">Uses lower HLS quality where available, smaller buffers and extra retries. Works best with multi-quality HLS playlists.</span></div><div class="sv-low-switch"><input id="svLowNetworkToggle" type="checkbox" aria-label="Low Network Mode"><span class="sv-low-slider"></span></div>';
+ row.innerHTML='<div class="settings-item-left sv-low-copy"><strong>📶 Low Network Mode — All Channels</strong><span class="sv-low-sub">Uses lower HLS quality where available, smaller buffers and extra retries. Works best with multi-quality HLS playlists.</span></div><div class="sv-low-switch"><input id="svLowNetworkToggle" type="checkbox" aria-label="Low Network Mode"><span class="sv-low-slider"></span></div>';
  list.insertBefore(row,list.children[2]||null);
  const input=$('svLowNetworkToggle');input.checked=read();
  function setMode(v){input.checked=!!v;const ok=write(v);if(!ok){input.checked=!v;alert('Could not save this setting. Browser storage may be disabled.');return}
