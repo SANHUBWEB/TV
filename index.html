@@ -918,6 +918,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 <button class="refresh-btn" id="refreshUrlBtn" style="display: none;">&#x1f504; Refresh Channels</button>
                 <button class="clear-btn" id="clearCacheBtn" style="display: none;">&#x1f5d1;&#xfe0f; Clear Cache</button>
                 <p style="font-size:13px;color:#687386;line-height:1.45">Refresh adds new channels to your saved list. Channels will stay here even if they disappear from a later playlist. Use &#x201c;Clear Cache&#x201d; only when you want to delete the saved list.</p>
+                <button id="dataUsageScanBtn" type="button" style="margin-top:10px;background:#1769e0;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;width:100%">&#x1f50e; Auto Detect &amp; Scan Channels</button>
+                <p id="dataUsageScanStatus" style="font-size:13px;color:#687386;line-height:1.45;margin:8px 0 0">Scan checks channel links; it will not delete channels.</p>
+                <div id="newChannelsReport" style="display:none;margin-top:12px;padding:12px;border:1px solid #d5dbe5;border-radius:12px;background:#f8fafc;color:#18202b"></div>
             </div>
             <p style="color:#888; margin-top:24px; font-size:13px;">Optional: your own CORS proxy for streams that fail to play. Format: https://your-proxy.example/?url=</p>
             <div class="url-input-group" style="margin-top:8px;">
@@ -1138,7 +1141,13 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 refreshUrlBtn.style.display = 'block';
                 clearCacheBtn.style.display = 'block';
                 document.getElementById('iptvUrlInput').value = url;
-                cacheDetails.innerHTML = `<strong>Channels:</strong> ${channelCount}<br><strong>Source:</strong> ${url.substring(0, 50)}...<br><strong>Last Updated:</strong> ${date}`;
+                cacheDetails.innerHTML = `<strong>Saved master list:</strong> ${channelCount} channels<br><strong>Source playlist now:</strong> ${Number(localStorage.getItem('iptv_last_refresh_source_count') || channelCount)} channels<br><strong>Last Updated:</strong> ${date}`;
+                const report = document.getElementById('newChannelsReport');
+                if (report) {
+                    let added=[]; try { added=JSON.parse(localStorage.getItem('iptv_last_refresh_new_channels')||'[]'); if(!Array.isArray(added))added=[]; } catch(e){}
+                    report.style.display='block';
+                    report.innerHTML = `<strong>ð Last refresh: ${added.length} new channel(s)</strong><div style="font-size:12px;color:#687386;margin:4px 0 8px">Older saved channels are kept even if today's playlist is smaller.</div>` + (added.length ? `<details><summary style="cursor:pointer">Show new channel names</summary><div style="max-height:180px;overflow:auto;margin-top:6px">${added.map((c,i)=>`<div style="padding:4px 0;border-bottom:1px solid #e5e7eb">${i+1}. ${escapeHtml(c.name||'Unnamed channel')}</div>`).join('')}</div></details>` : '<div style="font-size:13px">No new channels recorded yet, or the last refresh added none.</div>');
+                }
             } else {
                 cacheInfo.style.display = 'none';
                 refreshUrlBtn.style.display = 'none';
@@ -1719,21 +1728,24 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
         function mergePermanentChannels(previous, incoming) {
             const result = Array.isArray(previous) ? previous.slice() : [];
             const indexes = new Map();
-            const keyFor = c => {
-                const u = String(c && c.url || '').trim().toLowerCase();
-                if (u) return 'url:' + u;
-                return 'name:' + String(c && c.name || '').trim().toLowerCase() + '|group:' + String(c && c.group || '').trim().toLowerCase();
-            };
-            result.forEach((c, i) => indexes.set(keyFor(c), i));
+            const urlKey = c => 'url:' + String(c && c.url || '').trim().toLowerCase();
+            const identityKey = c => 'identity:' + String(c && c.name || '').trim().toLowerCase() + '|group:' + String(c && (c.svOrigGroup || c.group) || '').trim().toLowerCase();
+            const addIndex = (c, i) => { const u=urlKey(c), id=identityKey(c); if(u!=='url:')indexes.set(u,i); if(id!=='identity:|group:')indexes.set(id,i); };
+            result.forEach((c, i) => addIndex(c, i));
             (Array.isArray(incoming) ? incoming : []).forEach(c => {
-                const k = keyFor(c);
-                if (indexes.has(k)) {
-                    const i = indexes.get(k);
-                    // Refresh stream metadata while retaining user/dashboard-only fields.
-                    result[i] = { ...result[i], ...c };
+                const u=urlKey(c), id=identityKey(c);
+                // URL is the strongest match. If a provider rotates a stream URL,
+                // matching name + original group preserves the saved channel identity/number.
+                const found = indexes.has(u) ? indexes.get(u) : indexes.has(id) ? indexes.get(id) : -1;
+                if (found >= 0) {
+                    const i = found;
+                    const old = result[i];
+                    result[i] = { ...old, ...c };
+                    if (old.svNum && !result[i].svNum) result[i].svNum = old.svNum;
+                    addIndex(result[i], i);
                 } else {
-                    indexes.set(k, result.length);
-                    result.push(c);
+                    const i = result.length;
+                    result.push(c); addIndex(c, i);
                 }
             });
             return result;
@@ -1750,9 +1762,14 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
             try {
                 const data = await fetchPlaylist(url);
                 const freshChannels = parseM3U(data);
-                // Merge with the saved master list so a smaller playlist tomorrow cannot
-                // silently shrink the dashboard. Deduplication is by stream URL.
-                channels = saveToCache ? mergePermanentChannels(loadChannelsFromCache() || channels, freshChannels) : freshChannels;
+                // Keep the permanent master list and record newly discovered channels.
+                const previousMaster = saveToCache ? (loadChannelsFromCache() || channels || []) : [];
+                const mergeKey = c => { const u=String(c&&c.url||'').trim().toLowerCase(); return u ? 'url:'+u : 'name:'+String(c&&c.name||'').trim().toLowerCase()+'|group:'+String(c&&c.group||'').trim().toLowerCase(); };
+                const known = new Set(previousMaster.map(mergeKey));
+                const newlyAdded = [];
+                freshChannels.forEach(c => { const k=mergeKey(c); if(!known.has(k)){newlyAdded.push(c);known.add(k);} });
+                if(saveToCache){ try { localStorage.setItem('iptv_last_refresh_new_channels', JSON.stringify(newlyAdded)); localStorage.setItem('iptv_last_refresh_source_count', String(freshChannels.length)); } catch(e){} }
+                channels = saveToCache ? mergePermanentChannels(previousMaster, freshChannels) : freshChannels;
                 buildAutoFilters(channels);
                 if (!channels.length) { playlistState = 'ready'; throw new Error('No channels found. Check that the URL points to a valid M3U playlist.'); }
                 playlistState = 'ready';
@@ -2029,23 +2046,35 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 
             const startHls = (mode, source) => {
                 armWatchdog(mode, 'manifest');
+                // Low Network Mode is a real HLS.js playback preference. It favors the
+                // lowest available rendition, shorter buffers, and conservative ABR.
+                // It cannot force quality changes for native HLS or single-quality streams.
+                let lowNetworkMode = false;
+                try { lowNetworkMode = localStorage.getItem('santv_low_network_mode_v1') === 'true'; } catch (_) {}
                 const cfg = {
                     enableWorker: true,
                     lowLatencyMode: false,
-                    maxBufferLength: 30,
-                    maxMaxBufferLength: 60,
-                    backBufferLength: 30,
+                    maxBufferLength: lowNetworkMode ? 10 : 30,
+                    maxMaxBufferLength: lowNetworkMode ? 20 : 60,
+                    backBufferLength: lowNetworkMode ? 8 : 30,
                     capLevelToPlayerSize: true,
-                    manifestLoadingTimeOut: 10000,
-                    manifestLoadingMaxRetry: 1,
-                    levelLoadingTimeOut: 10000,
-                    levelLoadingMaxRetry: 1,
-                    fragLoadingTimeOut: 15000,
-                    fragLoadingMaxRetry: 2,
+                    abrEwmaDefaultEstimate: lowNetworkMode ? 400000 : 500000,
+                    abrBandWidthFactor: lowNetworkMode ? 0.7 : 0.95,
+                    abrBandWidthUpFactor: lowNetworkMode ? 0.5 : 0.7,
+                    startLevel: lowNetworkMode ? 0 : -1,
+                    manifestLoadingTimeOut: 15000,
+                    manifestLoadingMaxRetry: lowNetworkMode ? 3 : 1,
+                    levelLoadingTimeOut: 15000,
+                    levelLoadingMaxRetry: lowNetworkMode ? 3 : 1,
+                    fragLoadingTimeOut: 20000,
+                    fragLoadingMaxRetry: lowNetworkMode ? 4 : 2,
                     maxBufferHole: 0.5
                 };
                 if (mode.kind === 'loader') cfg.loader = makeProxyLoader(mode.wrap);
                 const h = new Hls(cfg);
+                if (lowNetworkMode) {
+                    try { h.autoLevelCapping = 0; } catch (_) {}
+                }
                 hls = h;
                 let mediaRecoveries = 0;
                 h.on(Hls.Events.MEDIA_ATTACHED, () => h.loadSource(source));
@@ -3423,8 +3452,15 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
     const intent=byId('svIntent'); if(intent)intent.onclick=()=>{location.href='intent://'+url.replace(/^https?:\/\//,'')+'#Intent;type=video/*;action=android.intent.action.VIEW;end';};
     const copy=byId('svCopyUrl'); if(copy)copy.onclick=async()=>{try{await navigator.clipboard.writeText(url);copy.textContent='Copied';}catch(e){openNotice('Copy stream URL','Clipboard permission nahi mili. URL ko manually copy karein:<p style="overflow-wrap:anywhere">'+safe+'</p>')}};
   }
+  window.svScanChannels = scanChannels;
   document.addEventListener('DOMContentLoaded',()=>{
     byId('autoScanChannelsBtn')?.addEventListener('click',scanChannels);
+    byId('dataUsageScanBtn')?.addEventListener('click', async ()=>{
+      const status=byId('dataUsageScanStatus');
+      if(status) status.textContent='Scan startingâ¦ Channels will not be deleted.';
+      await scanChannels();
+      if(status) status.textContent=(byId('svAutoTuneStatus')?.textContent||'Scan finished')+' Â· No channels were removed.';
+    });
     loadTuneStatus();
     byId('externalPlayerBtn')?.addEventListener('click',externalPlayer);
     // Auto-tune once after a playlist has populated the channel array.
@@ -3604,8 +3640,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 <style>#svMapPage{position:fixed;inset:0;z-index:9000;background:#f7f8fb;color:#172033;display:none;flex-direction:column;overflow:auto;padding:16px;font:14px system-ui}#svMapPage input,#svMapPage select{padding:10px;border:1px solid #ccd3df;border-radius:9px;max-width:100%;background:white;color:#172033}#svMapPage input[type=checkbox]{width:20px;height:20px;padding:0;vertical-align:middle;margin-right:8px}#svMapPage button{padding:10px 14px;border:0;border-radius:9px;background:#b02b3d;color:#fff;font-weight:700}#svMapPage label{display:block;margin:8px 0}#svMapPage .sv-grey{background:#e9edf4;color:#172033}#svMapRows,#svCatNums,#svDupes{display:grid;gap:8px;margin:10px 0}.sv-maprow,.sv-card{display:grid;grid-template-columns:1fr 82px;gap:8px;align-items:center;padding:10px;background:white;border:1px solid #e1e6ee;border-radius:12px}.sv-card{display:flex;justify-content:space-between}.sv-maprow small{display:block;color:#687386;margin-top:3px}.sv-chnum{display:inline-block;min-width:22px;padding:1px 6px;margin-right:6px;border-radius:6px;background:#b02b3d;color:#fff;font:700 11px system-ui;text-align:center;vertical-align:middle}#svNumToast{position:fixed;z-index:99999;top:8%;left:50%;transform:translateX(-50%);background:#111;color:#fff;border:2px solid #b02b3d;border-radius:14px;padding:14px 20px;font:700 24px system-ui;display:none;max-width:90vw;text-align:center}</style>
 <div id="svMapPage"><div style="display:flex;align-items:center;gap:12px"><button id="svMapBack">&#x2190; Back</button><h2 style="margin:8px 0">Channel Numbers & Category Merge</h2></div>
 <h3>Auto channel numbers</h3>
-<label><input type="checkbox" id="svAutoNum">Auto channel numbers: poori playlist 1 se total tak (category ek ke baad ek)</label>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="svRenumber">Renumber now</button><button id="svClearNums" class="sv-grey">Manual numbers clear</button></div>
+<label><input type="checkbox" id="svAutoNum">Auto channel numbers: naye channels ko next number dein; saved channel numbers refresh par fixed rahenge</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="svRenumber">Renumber all (numbers reset)</button><button id="svClearNums" class="sv-grey">Manual numbers clear</button></div>
 <div id="svCatNums"></div>
 <h3>Sirf working channels</h3>
 <label><input type="checkbox" id="svOnlyOk">Dashboard par sirf reachable channels dikhao (jo chalte nahi / http-blocked / error wale hide)</label>
@@ -3674,8 +3710,17 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
   if(list.length&&list.every(c=>c.svHide))list.forEach(c=>{c.svHide=false}); // never leave the dashboard empty
   // One category after another, so numbers run 1..total over the whole playlist.
   if(cfg.autoNum){const flat=[].concat(...groups.values());if(flat.length===list.length)for(let i=0;i<flat.length;i++)list[i]=flat[i]}
-  const used=new Set(list.filter(c=>!c.svHide).map(c=>Number(nums[chKey(c)])).filter(Boolean));let n=0;
-  list.forEach(c=>{if(c.svHide){c.svNum=0;return}const m=Number(nums[chKey(c)])||0;if(m)c.svNum=m;else if(cfg.autoNum){do{n++}while(used.has(n));c.svNum=n}else c.svNum=0});
+  // Stable numbering: once a channel gets a number, keep it across refreshes.
+  // New channels are appended after the highest saved number; numbers are never recycled.
+  let maxSaved=0;
+  Object.values(nums).forEach(v=>{const n=Number(v)||0;if(n>maxSaved)maxSaved=n});
+  list.forEach(c=>{
+   if(c.svHide){c.svNum=0;return}
+   const k=chKey(c);let n=Number(nums[k])||Number(c.svNum)||0;
+   if(!n&&cfg.autoNum){n=++maxSaved;nums[k]=n;}
+   if(n){c.svNum=n;if(!Number(nums[k]))nums[k]=n;}else c.svNum=0;
+  });
+  try{localStorage.setItem(NUMKEY,JSON.stringify(nums))}catch(e){}
   const stats=[];
   groups.forEach(mem=>{const vis=mem.filter(c=>!c.svHide);if(!vis.length)return;const v=vis.map(c=>c.svNum).filter(Boolean);stats.push({name:mem[0].svCat,count:vis.length,min:v.length?v.reduce((a,b)=>Math.min(a,b)):0,max:v.length?v.reduce((a,b)=>Math.max(a,b)):0})});
   stats.sort((a,b)=>(a.min-b.min)||(b.count-a.count));
@@ -3737,8 +3782,8 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
  $('svAutoMerge').onchange=e=>{cfg.autoMerge=e.target.checked;persist();refresh()};
  $('svOnlyOk').onchange=e=>{cfg.onlyOk=e.target.checked;persist();refresh()};
  $('svStrict').onchange=e=>{cfg.strict=e.target.checked;persist();refresh()};
- $('svRenumber').onclick=()=>{refresh();toast('\u2705 Channel numbers ready',1800)};
- $('svClearNums').onclick=()=>{nums={};persist();refresh();toast('Manual numbers clear ho gaye',1800)};
+ $('svRenumber').onclick=()=>{if(!confirm('Saare channel numbers reset karke naye sequence mein assign karein?'))return;nums={};allCh().forEach(c=>{try{delete c.svNum}catch(e){c.svNum=0}});cfg.autoNum=true;persist();refresh();toast('\u2705 Channel numbers reset aur dobara assign ho gaye',2200)};
+ $('svClearNums').onclick=()=>{if(!confirm('Saved channel numbers clear karein? Auto numbering on ho to numbers dobara assign honge.'))return;nums={};allCh().forEach(c=>{try{delete c.svNum}catch(e){c.svNum=0}});persist();refresh();toast('Saved channel numbers clear ho gaye',1800)};
  const mergeDupe=d=>d.variants.forEach(v=>{if(v!==d.label)merges[v]=d.label});
  $('svMergeAll').onclick=()=>{(window.svDupes||[]).forEach(mergeDupe);persist();refresh();toast('\u2705 Duplicate categories merged',1800)};
  $('svDupes').addEventListener('click',e=>{const b=e.target.closest('[data-mg]');if(!b)return;const d=(window.svDupes||[])[Number(b.dataset.mg)];if(d){mergeDupe(d);persist();refresh()}});
@@ -4085,9 +4130,10 @@ const PLAYERS=[['','Auto (recommended \u2013 sab try karega)'],['hlsjs','HLS.js 
 const plName=v=>(PLAYERS.find(p=>p[0]===(v||''))||PLAYERS[0])[1].replace(/ \(.*\)$/,'');
 const plOpts=cur=>PLAYERS.map(p=>'<option value="'+p[0]+'"'+((cur||'')===p[0]?' selected':'')+'>'+esc(p[1])+'</option>').join('');
 const T=(id,label,mode)=>({id,label,icon:id,mode,match:'',keys:[],folders:[]});
-const DEF=()=>({assign:{},cats:[],langs:[],hideCats:[],hideLangs:[],tabs:[T('home','Home','all'),T('live','Live TV','all'),T('free','Free','free'),T('premium','Premium','premium'),T('trending','Trending','manual')]});
+const DEF=()=>({assign:{},cats:[],langs:[],hideCats:[],hideLangs:[],hiddenLangs:[],tabs:[T('home','Home','all'),T('live','Live TV','all'),T('free','Free','free'),T('premium','Premium','premium'),T('trending','Trending','manual')]});
 function load(){try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&Array.isArray(o.tabs)&&o.tabs.length)return Object.assign(DEF(),o)}catch(e){}return DEF()}
 let cfg=load();
+if(!Array.isArray(cfg.hiddenLangs))cfg.hiddenLangs=[];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch(e){}};
 let tt;function toast(m){const t=$('dmToast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2000)}
 
@@ -4121,7 +4167,7 @@ function restrict(){
  const anyAssignedCategoryOrLanguage=CH().some(c=>{const a=cfg.assign[kOf(c)];return !!(a&&(String(a.cat||'').trim()||String(a.lang||'').trim()))});
  /* FIX: unassigned channels stay visible (auto category/language still applies). */
  // Per-channel Show/Hide setting applies everywhere. Hidden channels remain editable in Manager.
- return b.filter(c=>!(cfg.assign[kOf(c)]&&cfg.assign[kOf(c)].show===false));
+ return b.filter(c=>!(cfg.assign[kOf(c)]&&cfg.assign[kOf(c)].show===false) && !cfg.hiddenLangs.some(h=>low(h)===low(chLang(c))));
 }
 const _af=window.applyFilters;
 window.applyFilters=function(src){if(src===channels)src=restrict();return _af.call(this,src)};
@@ -4151,8 +4197,9 @@ function showTab(id){
 document.querySelector('.bottom-nav').addEventListener('click',e=>{const a=e.target.closest('.nav-item');if(!a)return;e.preventDefault();showTab(a.dataset.nav)});
 
 /* ---------- category / language overrides ---------- */
-const chLang=c=>{let l=c.filterLanguage||'';if(!l){try{l=inferFilterMeta(c.name,c.group,c.language).language||''}catch(e){}}return cap(l||c.language||'')};
-const chCat=c=>c.svCat||c.filterCategory||c.group||'';
+const KNOWN_LANGUAGES=['Hindi','Marathi','Telugu','Tamil','Kannada','Malayalam','Bengali','Punjabi','Gujarati','Urdu','English','Odia','Assamese','Bhojpuri','Haryanvi','Rajasthani','Sanskrit','Konkani','Nepali','Other / Unknown'];
+const chLang=c=>{const saved=cfg.assign[kOf(c)];if(saved&&saved.lang)return cap(saved.lang);let l=c.filterLanguage||'';if(!l){try{l=inferFilterMeta(c.name,c.group,c.language).language||''}catch(e){}}l=l||c.language||'';const raw=String(l).trim();if(!raw)return 'Other / Unknown';const code=low(raw);const aliases={'hi':'Hindi','hindi':'Hindi','mr':'Marathi','marathi':'Marathi','te':'Telugu','telugu':'Telugu','ta':'Tamil','tamil':'Tamil','kn':'Kannada','kannada':'Kannada','ml':'Malayalam','malayalam':'Malayalam','bn':'Bengali','bengali':'Bengali','pa':'Punjabi','punjabi':'Punjabi','gu':'Gujarati','gujarati':'Gujarati','ur':'Urdu','urdu':'Urdu','en':'English','english':'English','or':'Odia','odia':'Odia','as':'Assamese','assamese':'Assamese','bhojpuri':'Bhojpuri','haryanvi':'Haryanvi','rajasthani':'Rajasthani','sanskrit':'Sanskrit','konkani':'Konkani','nepali':'Nepali'};return aliases[code]||cap(raw)};
+const chCat=c=>{let v=c.svCat||c.filterCategory||c.group||'';if(!v){try{v=inferFilterMeta(c.name,c.group,c.language).category||''}catch(e){}}return v};
 function overrides(list){
  const A=cfg.assign;
  list.forEach(c=>{
@@ -4213,10 +4260,10 @@ function startPrev(c,pl){
 }
 
 /* ---------- manager UI ---------- */
-let sec='ch',selKey=null,q='';
+let sec='ch',selKey=null,q='',categoryView=null;
 const body=()=>$('dmBody');
 const allCats=()=>uniq([...CH().map(chCat),...cfg.cats,...cfg.hideCats]);
-const allLangs=()=>uniq([...CH().map(chLang),...(typeof DEFAULT_FILTER_LANGUAGES!=='undefined'?DEFAULT_FILTER_LANGUAGES:[]),...cfg.langs,...cfg.hideLangs]);
+const allLangs=()=>uniq([...KNOWN_LANGUAGES,...CH().map(chLang),...(typeof DEFAULT_FILTER_LANGUAGES!=='undefined'?DEFAULT_FILTER_LANGUAGES:[]),...cfg.langs,...cfg.hideLangs]);
 const opts=(arr,cur)=>'<option value="">(auto)</option>'+arr.map(v=>'<option'+(low(v)===low(cur)?' selected':'')+'>'+esc(v)+'</option>').join('');
 function folderTargets(){
  const r=[];
@@ -4229,10 +4276,10 @@ function folderTargets(){
 function renderCh(){
  const list=CH();
  const sel=list.find(c=>kOf(c)===selKey);
- body().innerHTML='<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
+ body().innerHTML=(categoryView?'<div class="dm-card"><div class="dm-row"><b style="flex:1">ð Category: '+esc(categoryView)+'</b><button class="g sm" id="dmClearCatView">All Categories</button></div><small>Is category ke channels neeche hain. Kisi channel par click karke uski details edit karein.</small></div>':'')+'<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
  +'<b id="dmName">'+(sel?esc(sel.name):'\u2014 channel list se chuno \u2014')+'</b>'
  +'<label>Category<select id="dmCat">'+opts(allCats(),sel?chCat(sel):'')+'</select></label>'
- +'<label>Language<select id="dmLang">'+opts(allLangs(),sel?chLang(sel):'')+'</select></label>'
+ +'<label>Channel Language (Hindi / Marathi / Telugu etc.)<select id="dmLang">'+opts(allLangs(),sel?chLang(sel):'')+'</select></label>'
  +'<label>\ud83c\udfac Player (ye channel kis player se chale)<select id="dmPlayer">'+plOpts(sel&&cfg.assign[kOf(sel)]?cfg.assign[kOf(sel)].player:'')+'</select></label>'
  +'<label class="dm-chk" style="font-size:15px;padding:8px 0"><input type="checkbox" id="dmShow" '+(!sel||!(cfg.assign[kOf(sel)]&&cfg.assign[kOf(sel)].show===false)?'checked':'')+'> Dashboard par ye channel dikhayein (Show / Hide)</label>'
  +'<div id="dmFolds"></div>'
@@ -4257,7 +4304,7 @@ function drawFolds(sel){
 }
 function drawList(){
  const box=$('dmList');if(!box)return;
- const t=low(q);let l=CH().filter(c=>!t||low(c.name).includes(t)||low(chCat(c)).includes(t));
+ const t=low(q);let l=CH().filter(c=>(!categoryView||low(chCat(c))===low(categoryView))&&(!t||low(c.name).includes(t)||low(chCat(c)).includes(t)));
  const n=l.length;l=l.slice(0,150);
  box.innerHTML=l.map(c=>{const k=kOf(c),o=cfg.assign[k],hidden=!!(o&&o.show===false);return '<div class="dm-item'+(k===selKey?' sel':'')+'" data-k="'+esc(k)+'"><b>'+esc(c.name||'Channel')+'</b><small>'+esc(chCat(c)||'-')+' \u00b7 '+esc(chLang(c)||'-')+' \u00b7 '+(hidden?'\ud83d\ude48 Hidden':'\ud83d\udc41\ufe0f Shown')+(o&&o.player?' \u00b7 \ud83c\udfac '+esc(plName(o.player)):'')+'</small>'+(o?'<span>\u270f\ufe0f</span>':'')+'</div>'}).join('')+(n>150?'<small>Pehle 150 dikh rahe hain ('+n+' mile) \u2014 search karein.</small>':'');
 }
@@ -4281,15 +4328,28 @@ function saveChannel(next){
 function renderLists(kind){
  const isC=kind==='cat',names=isC?allCats():allLangs(),hid=isC?cfg.hideCats:cfg.hideLangs,cust=isC?cfg.cats:cfg.langs;
  const cnt={};CH().forEach(c=>{const v=low(isC?chCat(c):chLang(c));cnt[v]=(cnt[v]||0)+1});
- body().innerHTML='<div class="dm-card"><div class="dm-row"><input id="dmNew" placeholder="Naya '+(isC?'category':'language')+' naam" style="flex:1"><button id="dmAdd">+ Add</button></div></div>'
- +names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+(h?';opacity:.5':'')+'"><b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' ch</small><button class="g sm" data-ren="'+i+'">\u270f\ufe0f</button><button class="g sm" data-hid="'+i+'">'+(h?'Show':'Hide')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">\ud83d\uddd1</button>':'')+'</div>'}).join('');
+ const selectedHidden=cfg.hiddenLangs||[];
+ body().innerHTML=(isC?'':'<div class="dm-card"><b>Language visibility â Dashboard</b><small>Har language ka naam aur uske channels ki count neeche hai. Agar language galat ho, Channels tab mein channel select karke Language dropdown se Hindi / Marathi / Telugu set karein aur Save karein. Jis language ko hide karenge, uske channels main Dashboard par nahi dikhenge; data delete nahi hoga.</small><div class="dm-row"><label class="dm-chk"><input type="checkbox" id="dmLangSelectAll"> Select all languages</label><button class="g sm" id="dmHideSelectedLangs">Hide selected</button><button class="g sm" id="dmShowSelectedLangs">Show selected</button><button class="g sm" id="dmShowAllLangs">Show all languages</button></div></div>')
+ +'<div class="dm-card"><div class="dm-row"><input id="dmNew" placeholder="Naya '+(isC?'category':'language')+' naam" style="flex:1"><button id="dmAdd">+ Add</button></div></div>'
+ +(!isC?'<input id="dmLangSearch" placeholder="Search language: Hindi, Marathi, Telugu..." style="margin-bottom:8px">':'')+names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n)),hiddenLang=!isC&&selectedHidden.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+((h||hiddenLang)?';opacity:.65':'')+'">'+(!isC?'<input type="checkbox" class="dmLangPick" data-lang-index="'+i+'" style="width:auto" aria-label="Select '+esc(n)+'">':'')+'<b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' channels'+(hiddenLang?' Â· ð« Dashboard hidden':'')+'</small>'+(isC?'<button class="g sm" data-open-cat="'+i+'">Open / Edit Channels</button>':'<button class="g sm" data-lang-visibility="'+i+'">'+(hiddenLang?'Show channels':'Hide channels')+'</button>')+'<button class="g sm" data-ren="'+i+'">âï¸ Rename</button><button class="g sm" data-hid="'+i+'">'+(h?'Show filter':'Hide filter')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">ð</button>':'')+'</div>'}).join('');
  body().dataset.names=JSON.stringify(names);
 }
 function listAction(kind,e){
  const isC=kind==='cat',names=JSON.parse(body().dataset.names||'[]');
  const hid=isC?'hideCats':'hideLangs',cust=isC?'cats':'langs';
+ const openCat=e.target.closest('button[data-open-cat]');
+ if(openCat&&isC){categoryView=names[+openCat.dataset.openCat];q='';sec='ch';render();return}
  const add=e.target.closest('#dmAdd');
  if(add){const v=cap($('dmNew').value.trim());if(!v)return;if(!cfg[cust].some(x=>low(x)===low(v)))cfg[cust].push(v);cfg[hid]=cfg[hid].filter(x=>low(x)!==low(v));save();applyAll();return renderLists(kind)}
+ if(!isC){
+  const picks=[...body().querySelectorAll('.dmLangPick:checked')].map(cb=>names[+cb.dataset.langIndex]);
+  const setVisibility=(arr,hide)=>{arr.forEach(n=>{cfg.hiddenLangs=cfg.hiddenLangs.filter(x=>low(x)!==low(n));if(hide)cfg.hiddenLangs.push(n)});cfg.hiddenLangs=uniq(cfg.hiddenLangs);save();applyAll();renderLists(kind);toast((hide?'Hidden ':'Shown ')+arr.length+' languages; channel data retained')};
+  if(e.target.id==='dmLangSelectAll'){body().querySelectorAll('.dmLangPick').forEach(cb=>cb.checked=e.target.checked);return}
+  if(e.target.id==='dmHideSelectedLangs')return picks.length?setVisibility(picks,true):toast('Pehle languages select karein');
+  if(e.target.id==='dmShowSelectedLangs')return picks.length?setVisibility(picks,false):toast('Pehle languages select karein');
+  if(e.target.id==='dmShowAllLangs')return setVisibility(names,false);
+  const vb=e.target.closest('button[data-lang-visibility]');if(vb){const n=names[+vb.dataset.langVisibility],hidden=cfg.hiddenLangs.some(x=>low(x)===low(n));setVisibility([n],!hidden);return}
+ }
  const b=e.target.closest('button[data-ren],button[data-hid],button[data-del]');if(!b)return;
  const n=names[+(b.dataset.ren??b.dataset.hid??b.dataset.del)];
  if(b.dataset.hid!==undefined){const h=cfg[hid].some(x=>low(x)===low(n));cfg[hid]=h?cfg[hid].filter(x=>low(x)!==low(n)):[...cfg[hid],n]}
@@ -4297,7 +4357,9 @@ function listAction(kind,e){
  else{
   const nn=cap((prompt('Naya naam:',n)||'').trim());if(!nn||low(nn)===low(n))return;
   CH().forEach(c=>{if(low(isC?chCat(c):chLang(c))===low(n)){const k=kOf(c),o=cfg.assign[k]||{cat:'',lang:''};o[isC?'cat':'lang']=nn;cfg.assign[k]=o}});
+  if(isC&&categoryView&&low(categoryView)===low(n))categoryView=nn;
   Object.values(cfg.assign).forEach(o=>{if(low(o[isC?'cat':'lang'])===low(n))o[isC?'cat':'lang']=nn});
+  if(!isC)cfg.hiddenLangs=cfg.hiddenLangs.map(x=>low(x)===low(n)?nn:x);
   if(!cfg[cust].some(x=>low(x)===low(nn)))cfg[cust].push(nn);
   cfg[hid]=[...cfg[hid].filter(x=>low(x)!==low(n)),n];
  }
@@ -4308,7 +4370,7 @@ function renderNavEd(){
  +cfg.tabs.map((t,i)=>'<div class="dm-card" data-t="'+i+'"><div class="dm-row"><input data-f="icon" value="'+esc(t.icon)+'" style="width:84px"><input data-f="label" value="'+esc(t.label)+'" style="flex:1"></div>'
  +'<select data-f="mode">'+['all','free','premium','manual'].map(m=>'<option value="'+m+'"'+(t.mode===m?' selected':'')+'>'+cap(m)+'</option>').join('')+'</select>'
  +'<input data-f="match" placeholder="Keywords (zee, sony) \u2014 is tab mein auto aayenge" value="'+esc(t.match)+'">'
- +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:100px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<button class="g sm" data-act="addf">+ Folder</button></div>'
+ +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:80px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="fup" title="Move folder up">â</button><button class="g sm" data-act="fdown" title="Move folder down">â</button><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<small>Folder order: â / â se first se last position tak move karein.</small><button class="g sm" data-act="addf">+ Folder</button></div>'
  +'<div class="dm-row"><button class="g sm" data-act="up">\u2191</button><button class="g sm" data-act="down">\u2193</button><button class="g sm" data-act="delt">\ud83d\uddd1 Tab hatao</button></div></div>').join('')
  +'<div class="dm-row"><button id="dmAddTab">+ Naya Tab</button><button id="dmDefTabs" class="g">Default tabs wapas</button></div>';
 }
@@ -4324,6 +4386,8 @@ function navEvent(e){
  const act=e.target.dataset.act;if(!act)return;
  if(act==='addf')t.folders.push({name:'Folder',icon:'\ud83d\udcc1',match:'',keys:[]});
  else if(act==='delf')t.folders.splice(+e.target.closest('[data-fo]').dataset.fo,1);
+ else if(act==='fup'){const fi=+e.target.closest('[data-fo]').dataset.fo;if(fi>0)[t.folders[fi-1],t.folders[fi]]=[t.folders[fi],t.folders[fi-1]];}
+ else if(act==='fdown'){const fi=+e.target.closest('[data-fo]').dataset.fo;if(fi<t.folders.length-1)[t.folders[fi+1],t.folders[fi]]=[t.folders[fi],t.folders[fi+1]];}
  else if(act==='up'&&ti>0)[cfg.tabs[ti-1],cfg.tabs[ti]]=[cfg.tabs[ti],cfg.tabs[ti-1]];
  else if(act==='down'&&ti<cfg.tabs.length-1)[cfg.tabs[ti+1],cfg.tabs[ti]]=[cfg.tabs[ti],cfg.tabs[ti+1]];
  else if(act==='delt'){if(cfg.tabs.length<2)return toast('Kam se kam 1 tab');cfg.tabs.splice(ti,1)}
@@ -4334,6 +4398,7 @@ function render(){stopPrev();document.querySelectorAll('#dmSeg button').forEach(
 $('dmSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sec=b.dataset.s;render()});
 body().addEventListener('click',e=>{
  if(sec==='ch'){
+  if(e.target.id==='dmClearCatView'){categoryView=null;q='';renderCh();return}
   const it=e.target.closest('.dm-item');
   if(it){selKey=it.dataset.k;renderCh();return}
   if(e.target.id==='dmSave')return saveChannel(false);
@@ -4348,6 +4413,7 @@ body().addEventListener('click',e=>{
  }else if(sec==='nav')navEvent(e);else listAction(sec,e);
 });
 body().addEventListener('input',e=>{
+ if(sec==='lang'&&e.target.id==='dmLangSearch'){const term=low(e.target.value);body().querySelectorAll('.dm-item').forEach(row=>{const name=row.querySelector('b')?.textContent||'';row.style.display=low(name).includes(term)?'flex':'none'});return}
  if(sec==='ch'){
   if(e.target.id==='dmQ'){q=e.target.value;drawList()}
   if(e.target.id==='dmKw'){const kw=low(e.target.value).split(',').map(s=>s.trim()).filter(Boolean);$('dmBN').textContent=kw.length?CH().filter(c=>kw.some(w=>low(c.name).includes(w))).length+' channels match':''}
@@ -4382,5 +4448,215 @@ window.svDash={refresh:applyAll,open};
   },true);
 })();
 </script>
+
+
+<!-- SanTV input compatibility: laptop mouse/wheel + Android TV remote/D-pad -->
+<style id="sv-mouse-tv-input-fix">
+  html, body { overscroll-behavior: none; }
+  #channelListContainer { overflow-y:auto !important; overflow-x:hidden !important; scroll-behavior:smooth; overscroll-behavior-y:contain; }
+  #channelListContainer, #channelListContainer * { cursor: default; }
+  button, a, .chip, .channel-item, .nav-item, .settings-item, .filter-chip,
+  .display-option, [role="button"], .dm-item { cursor:pointer; }
+  @media (hover:hover) and (pointer:fine) {
+    #channelListContainer { scrollbar-width:thin; }
+    #channelListContainer::-webkit-scrollbar { width:10px; }
+    #channelListContainer::-webkit-scrollbar-thumb { background:#b8c1cf; border-radius:10px; border:2px solid #f5f7fb; }
+    #channelListContainer::-webkit-scrollbar-track { background:#eef1f6; }
+    .channel-item:hover, button:hover, .chip:hover, .nav-item:hover { filter:brightness(.98); }
+  }
+  html[data-device="tv"] :focus-visible { outline:3px solid #2864f0 !important; outline-offset:3px !important; }
+  html[data-device="tv"] .channel-item:focus { border-color:#2864f0 !important; box-shadow:0 0 0 3px #2864f033 !important; }
+</style>
+<script id="sv-mouse-tv-input-fix-js">
+(function(){
+  'use strict';
+  const root=document.documentElement;
+  const $=s=>document.querySelector(s);
+  const list=()=>$('#channelListContainer');
+  const visible=el=>!!(el && el.getClientRects().length && getComputedStyle(el).visibility!=='hidden' && getComputedStyle(el).display!=='none');
+  const focusables=()=>Array.from(document.querySelectorAll(
+    'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [role="button"]'
+  )).filter(el=>visible(el) && !el.closest('[aria-hidden="true"]'));
+
+  // Keep native mouse-wheel scrolling reliable over the channel list and horizontal chips.
+  document.addEventListener('wheel',function(e){
+    const target=e.target instanceof Element ? e.target : null;
+    if(!target) return;
+    const scroller=target.closest('#channelListContainer, .filter-content, .settings-page, .display-settings-content, .search-content, .pl-tiles, .chips-container, .sv-subrow, #dmBody');
+    if(!scroller) return;
+    if(scroller.matches('.chips-container,.sv-subrow,.pl-tiles') && Math.abs(e.deltaY)>Math.abs(e.deltaX)){
+      scroller.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  },{passive:false});
+
+  // A TV remote usually emits keyboard events. Move focus between visible controls,
+  // and keep focused channel rows in view so the list scrolls with the D-pad.
+  document.addEventListener('keydown',function(e){
+    if(root.dataset.device!=='tv') return;
+    if(e.altKey||e.ctrlKey||e.metaKey) return;
+    const key=e.key;
+    if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(key)) return;
+    const t=e.target;
+    if(t && (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName))) return;
+    const lc=list();
+    const current=document.activeElement;
+    const inChannelList=!!(lc && (current===lc || lc.contains(current)));
+    if(key==='Enter'||key===' '){
+      if(current && current!==document.body && (current.matches('button,a,[role="button"],.channel-item,.chip,.nav-item,.settings-item,.filter-chip,.display-option')||current.tabIndex>=0)){
+        if(current.classList.contains('channel-item')){ e.preventDefault(); current.click(); }
+      }
+      return;
+    }
+    if(inChannelList && (key==='ArrowUp'||key==='ArrowDown')){
+      const rows=Array.from(lc.querySelectorAll('.channel-item')).filter(visible);
+      if(!rows.length) return;
+      let i=rows.indexOf(current.closest('.channel-item'));
+      if(i<0) i=0;
+      else i=Math.max(0,Math.min(rows.length-1,i+(key==='ArrowDown'?1:-1)));
+      e.preventDefault();
+      rows[i].focus({preventScroll:true});
+      rows[i].scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});
+      return;
+    }
+    // For other areas, use spatially nearby controls rather than letting the page jump.
+    const items=focusables();
+    if(!items.length) return;
+    let idx=items.indexOf(current);
+    if(idx<0){
+      const preferred=lc && lc.querySelector('.channel-item');
+      (preferred||items[0]).focus();
+      return;
+    }
+    const r=current.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const dir={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[key];
+    let best=null,bestScore=Infinity;
+    for(const el of items){
+      if(el===current) continue;
+      const q=el.getBoundingClientRect(), x=q.left+q.width/2, y=q.top+q.height/2;
+      const dx=x-cx,dy=y-cy, primary=dx*dir[0]+dy*dir[1], cross=Math.abs(dx*dir[1]-dy*dir[0]);
+      if(primary<=2) continue;
+      const score=primary+cross*2.2;
+      if(score<bestScore){bestScore=score;best=el;}
+    }
+    if(best){e.preventDefault();best.focus({preventScroll:true});best.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});}
+  },true);
+
+  // Clicking a channel with a mouse should not leave the keyboard focus stranded off-screen.
+  document.addEventListener('click',function(e){
+    const row=e.target instanceof Element ? e.target.closest('.channel-item') : null;
+    if(row && root.dataset.device==='tv') row.focus({preventScroll:true});
+  },true);
+})();
+</script>
+
+<!-- SanTV Settings Audit & Working Controls v1 -->
+<style>
+  .sv-classic-guide-off .pl-tile.guide{display:none!important}
+  #svParentalDialog{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;background:#0009;padding:18px;font:15px system-ui}
+  #svParentalDialog .sv-p-card{width:min(440px,100%);background:var(--panel-bg,#fff);color:var(--text-color,#172033);border-radius:16px;padding:20px;box-shadow:0 20px 60px #0005}
+  #svParentalDialog input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #b8c2d2;border-radius:10px;font-size:18px;margin:8px 0 12px}
+  #svParentalDialog button{padding:10px 14px;border:0;border-radius:9px;font-weight:700;margin:4px;cursor:pointer}
+</style>
+<div id="svParentalDialog" role="dialog" aria-modal="true" aria-labelledby="svParentalTitle">
+ <div class="sv-p-card"><h2 id="svParentalTitle" style="margin:0 0 8px">Parental / Settings PIN</h2>
+ <p style="margin:0 0 10px;line-height:1.45">Set a 4-digit PIN to protect Playlist URL and settings changes on this device. This is a local app lock, not encrypted account security.</p>
+ <label for="svParentalPin">4-digit PIN</label><input id="svParentalPin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Enter 4 digits">
+ <div id="svParentalError" style="color:#b42318;min-height:20px;font-size:13px"></div>
+ <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;margin-top:8px"><button id="svParentalCancel" style="background:#e9edf4;color:#182230">Cancel</button><button id="svParentalDisable" style="background:#e9edf4;color:#182230;display:none">Disable PIN</button><button id="svParentalSave" style="background:#c72b43;color:#fff">Save PIN</button></div>
+ </div>
+</div>
+<script>
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const KEYS={auto:'santv_setting_autoplay_home_v1',guide:'santv_setting_classic_guide_v1',pin:'santv_parental_pin_v1',langs:'santv_content_languages_v1'};
+ const get=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}};
+ const set=(k,v)=>{try{localStorage.setItem(k,String(v));return true}catch(e){return false}};
+ const visible=el=>!!el&&el.getClientRects().length>0;
+ function settingRow(label){return Array.from(document.querySelectorAll('#settingsPage .settings-item')).find(el=>el.textContent.replace(/\s+/g,' ').trim().toLowerCase().includes(label.toLowerCase()))}
+ function notice(msg){const n=document.createElement('div');n.textContent=msg;n.style.cssText='position:fixed;z-index:100000;left:50%;bottom:24px;transform:translateX(-50%);background:#172033;color:white;padding:12px 16px;border-radius:12px;max-width:90vw;box-shadow:0 6px 25px #0004;font:14px system-ui';document.body.appendChild(n);setTimeout(()=>n.remove(),2800)}
+ // Persist the two switches; Classic TV Guide is connected to the actual guide tile.
+ const autoRow=settingRow('Autoplay on Home'), autoInput=autoRow?.querySelector('input[type="checkbox"]');
+ const guideRow=settingRow('Classic TV Guide'), guideInput=guideRow?.querySelector('input[type="checkbox"]');
+ if(autoInput){autoInput.checked=get(KEYS.auto,'true')==='true';autoInput.setAttribute('aria-label','Autoplay first channel when playlist loads');autoInput.addEventListener('change',()=>{set(KEYS.auto,autoInput.checked);notice(autoInput.checked?'Autoplay on Home enabled':'Autoplay on Home disabled');});}
+ function applyGuide(){const on=guideInput?guideInput.checked:true;document.documentElement.classList.toggle('sv-classic-guide-off',!on);}
+ if(guideInput){guideInput.checked=get(KEYS.guide,'true')==='true';guideInput.setAttribute('aria-label','Show Classic TV Guide tile');guideInput.addEventListener('change',()=>{set(KEYS.guide,guideInput.checked);applyGuide();notice(guideInput.checked?'Classic TV Guide shown':'Classic TV Guide hidden');});}
+ applyGuide();
+ // If Autoplay is enabled, start the first channel only once after the playlist is rendered.
+ let autoStarted=false;
+ try{if(typeof window.renderChannels==='function'){
+   const original=window.renderChannels;
+   window.renderChannels=function(){const result=original.apply(this,arguments);if(!autoStarted&&get(KEYS.auto,'true')==='true'){
+     const rows=Array.from(document.querySelectorAll('#channelListContainer .channel-item')).filter(visible);
+     if(rows.length){autoStarted=true;setTimeout(()=>{try{rows[0].click()}catch(e){}},250)}
+   }return result;};
+ }}catch(e){}
+ // Content language selections now persist instead of only showing a success alert.
+ const langCards=Array.from(document.querySelectorAll('#contentLangPage .lang-card'));
+ function cardKey(card){return (card.querySelector('small')?.textContent||card.querySelector('span')?.textContent||card.textContent).replace(/\s+/g,' ').trim().toLowerCase()}
+ try{const saved=JSON.parse(get(KEYS.langs,'null'));if(Array.isArray(saved)){langCards.forEach(c=>c.classList.toggle('selected',saved.includes(cardKey(c))))}}catch(e){}
+ const oldLangConfirm=$('confirmLangBtn');if(oldLangConfirm){const newLangConfirm=oldLangConfirm.cloneNode(true);oldLangConfirm.replaceWith(newLangConfirm);newLangConfirm.addEventListener('click',()=>{const selected=langCards.filter(c=>c.classList.contains('selected')).map(cardKey);set(KEYS.langs,JSON.stringify(selected));const page=$('contentLangPage');if(page)page.style.display='none';notice(selected.length?('Saved '+selected.length+' preferred content languages'):'No preferred languages selected');});}
+ // Parental PIN: protects playlist editing actions, while preserving the user's saved playlist/channels.
+ const dialog=$('svParentalDialog'), pinInput=$('svParentalPin'), pinErr=$('svParentalError'), savePin=$('svParentalSave'), disablePin=$('svParentalDisable');
+ function openPinDialog(){if(!dialog)return;pinErr.textContent='';pinInput.value='';disablePin.style.display=get(KEYS.pin,'')?'inline-block':'none';dialog.style.display='flex';setTimeout(()=>pinInput.focus(),30)}
+ function closePinDialog(){if(dialog)dialog.style.display='none'}
+ const parentalRow=settingRow('Parental Controls');
+ if(parentalRow){parentalRow.setAttribute('role','button');parentalRow.tabIndex=0;parentalRow.addEventListener('click',openPinDialog);parentalRow.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPinDialog()}})}
+ $('svParentalCancel')?.addEventListener('click',closePinDialog);
+ savePin?.addEventListener('click',()=>{const p=pinInput.value.trim();if(!/^\d{4}$/.test(p)){pinErr.textContent='Please enter exactly 4 digits.';return}if(!set(KEYS.pin,p)){pinErr.textContent='Could not save PIN in this browser.';return}closePinDialog();notice('PIN protection enabled for playlist changes');});
+ disablePin?.addEventListener('click',()=>{const old=get(KEYS.pin,'');if(!old){closePinDialog();return}if(pinInput.value.trim()!==old){pinErr.textContent='Enter the current PIN in the field above to disable it.';return}try{localStorage.removeItem(KEYS.pin)}catch(e){}closePinDialog();notice('PIN protection disabled')});
+ pinInput?.addEventListener('keydown',e=>{if(e.key==='Enter')savePin?.click();if(e.key==='Escape')closePinDialog()});
+ function requestPin(){const saved=get(KEYS.pin,'');if(!saved)return true;const entered=prompt('Enter 4-digit PIN to edit playlist/settings:');if(entered===null)return false;if(entered!==saved){notice('Incorrect PIN');return false}return true}
+ const dataBtn=$('dataUsageBtn');if(dataBtn){dataBtn.addEventListener('click',e=>{if(!requestPin()){e.stopImmediatePropagation();e.preventDefault()}},true)}
+ // There is no account/login backend in this standalone HTML. Keep Sign Out visible, but make it a safe session reset rather than falsely claiming to log out.
+ const signRow=settingRow('Sign Out');
+ if(signRow){signRow.setAttribute('role','button');signRow.tabIndex=0;const reset=()=>{if(!confirm('Reset the current app session? Saved playlist, channels, categories and settings will NOT be deleted.'))return;['dataUsagePage','contentLangPage','displaySettingsPage','filterPage','searchPage'].forEach(id=>{const el=$(id);if(el)el.style.display='none'});if($('settingsPage'))$('settingsPage').style.display='none';if($('searchInput'))$('searchInput').value='';notice('App session reset. Saved data was kept.');};signRow.addEventListener('click',reset);signRow.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();reset()}});const left=signRow.querySelector('.settings-item-left');if(left)left.innerHTML=left.innerHTML.replace('Sign Out','Sign Out / Reset Session');}
+ // Accessibility: settings rows remain usable by TV remote and keyboard.
+ document.querySelectorAll('#settingsPage .settings-item').forEach(row=>{if(row.querySelector('input,button'))return;if(row.id||/Parental Controls|Sign Out/i.test(row.textContent)){row.tabIndex=0;row.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===row){e.preventDefault();row.click()}})}});
+})();
+</script>
+
+
+<!-- SanTV Low Network Mode: real HLS.js tuning, no false promise of zero buffering -->
+<style>
+#svLowNetworkRow{align-items:center;gap:12px}
+#svLowNetworkRow .sv-low-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+#svLowNetworkRow .sv-low-sub{font-size:12px;line-height:1.35;color:#718096;white-space:normal}
+#svLowNetworkRow .sv-low-switch{width:48px;height:28px;flex:0 0 auto;position:relative}
+#svLowNetworkRow .sv-low-switch input{opacity:0;width:1px;height:1px;position:absolute}
+#svLowNetworkRow .sv-low-slider{position:absolute;inset:0;border-radius:99px;background:#aab4c3;cursor:pointer;transition:.18s}
+#svLowNetworkRow .sv-low-slider:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 3px #0003}
+#svLowNetworkRow input:checked + .sv-low-slider{background:#1874e8}
+#svLowNetworkRow input:checked + .sv-low-slider:before{transform:translateX(20px)}
+#svLowNetworkRow input:focus-visible + .sv-low-slider{outline:3px solid #7db4ff;outline-offset:2px}
+</style>
+<script>
+(function(){
+ 'use strict';
+ const KEY='santv_low_network_mode_v1';
+ const $=id=>document.getElementById(id);
+ const read=()=>{try{return localStorage.getItem(KEY)==='true'}catch(_){return false}};
+ const write=v=>{try{localStorage.setItem(KEY,String(!!v));return true}catch(_){return false}};
+ const list=document.querySelector('#settingsPage .settings-list');
+ if(!list || $('svLowNetworkRow')) return;
+ const row=document.createElement('div');
+ row.className='settings-item';row.id='svLowNetworkRow';row.tabIndex=0;row.setAttribute('role','group');
+ row.innerHTML='<div class="settings-item-left sv-low-copy"><strong>ð¶ Low Network Mode â All Channels</strong><span class="sv-low-sub">Uses lower HLS quality where available, smaller buffers and extra retries. Works best with multi-quality HLS playlists.</span></div><div class="sv-low-switch"><input id="svLowNetworkToggle" type="checkbox" aria-label="Low Network Mode"><span class="sv-low-slider"></span></div>';
+ list.insertBefore(row,list.children[2]||null);
+ const input=$('svLowNetworkToggle');input.checked=read();
+ function setMode(v){input.checked=!!v;const ok=write(v);if(!ok){input.checked=!v;alert('Could not save this setting. Browser storage may be disabled.');return}
+   const note=v?'Low Network Mode ON. HLS channels will prefer the lowest available quality.':'Low Network Mode OFF. Normal adaptive quality restored.';
+   if(typeof window.svLowNetworkNotice==='function')window.svLowNetworkNotice(note);else {const n=document.createElement('div');n.textContent=note;n.style.cssText='position:fixed;z-index:100000;left:50%;bottom:22px;transform:translateX(-50%);background:#172033;color:white;padding:12px 16px;border-radius:12px;max-width:90vw;font:14px system-ui';document.body.appendChild(n);setTimeout(()=>n.remove(),3500)}
+   // Apply immediately to the currently playing channel when possible.
+   try{if(typeof currentStreamUrl!=='undefined'&&currentStreamUrl&&typeof initInlineVideo==='function')initInlineVideo(currentStreamUrl)}catch(_){/* next channel will use the saved mode */}
+ }
+ input.addEventListener('change',()=>setMode(input.checked));
+ row.addEventListener('click',e=>{if(e.target===input||e.target.classList.contains('sv-low-slider'))return;setMode(!input.checked)});
+ row.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===row){e.preventDefault();setMode(!input.checked)}});
+})();
+</script>
+
 </body>
 </html>
