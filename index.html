@@ -725,6 +725,48 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
 @media (min-width:601px) { .sv-subrow { display:none !important; } }
 #openLanguageBtn svg { width: 16px; height: 16px; flex: 0 0 16px; }
 </style>
+
+<style id="sv-ios-settings-skin">
+/* SanTV iOS-inspired Settings skin â visual only, no settings logic changed */
+:root{--sv-ios-bg:#f2f2f7;--sv-ios-card:#fff;--sv-ios-text:#1c1c1e;--sv-ios-muted:#8e8e93;--sv-ios-line:#e5e5ea;--sv-ios-blue:#007aff;--sv-ios-green:#34c759}
+.settings-page,.filter-page,#search-page,.display-settings-page,#dataUsagePage,#contentLangPage{background:var(--sv-ios-bg)!important;color:var(--sv-ios-text)!important}
+.settings-page,.filter-page,#dataUsagePage,#contentLangPage,.display-settings-page{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.settings-header,.filter-header{height:auto!important;min-height:64px;padding:calc(12px + env(safe-area-inset-top,0px)) 18px 14px!important;background:rgba(242,242,247,.94)!important;color:var(--sv-ios-text)!important;border-bottom:1px solid rgba(60,60,67,.12)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.settings-title,.filter-header .settings-title{font-size:22px!important;line-height:1.2;font-weight:750!important;letter-spacing:-.45px;color:var(--sv-ios-text)!important}
+.back-btn{width:38px!important;height:38px!important;min-width:38px;background:#fff!important;color:var(--sv-ios-blue)!important;border:1px solid rgba(60,60,67,.08)!important;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-right:12px!important}
+.settings-list{padding:14px 16px calc(28px + env(safe-area-inset-bottom,0px))!important;gap:0!important}
+.settings-item{min-height:60px;padding:12px 14px!important;background:var(--sv-ios-card)!important;border-bottom:1px solid var(--sv-ios-line)!important;color:var(--sv-ios-text)!important;gap:12px;transition:background .15s ease,transform .15s ease}
+.settings-item:first-child{border-radius:14px 14px 0 0}
+.settings-item:last-child{border-bottom:0!important;border-radius:0 0 14px 14px}
+.settings-item:only-child{border-radius:14px}
+.settings-item:active{background:#e9e9ee!important}
+.settings-item-left{min-width:0;gap:12px!important;font-size:15.5px!important;font-weight:500;color:var(--sv-ios-text)!important;line-height:1.35}
+.settings-item-left svg{width:22px!important;height:22px!important;flex-shrink:0;fill:var(--sv-ios-blue)!important}
+.settings-item-left>span[aria-hidden="true"]{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;background:#e8f2ff;font-size:16px}
+.settings-item-right{display:flex;align-items:center;gap:6px;color:var(--sv-ios-muted)!important;font-size:14px!important;white-space:nowrap}
+.settings-item-right:has(> .mini-value){font-size:13px!important}
+.settings-item .switch{width:51px!important;height:31px!important;flex-shrink:0}
+.settings-item .switch .slider{background:#e9e9eb!important;border:1px solid rgba(0,0,0,.05);border-radius:999px!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.02)}
+.settings-item .switch .slider:before{width:27px!important;height:27px!important;left:1px!important;bottom:1px!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.22);border-radius:50%!important}
+.settings-item .switch input:checked+.slider{background:var(--sv-ios-green)!important}
+.settings-item .switch input:checked+.slider:before{transform:translateX(20px)!important}
+.settings-item .switch input:focus-visible+.slider{outline:3px solid rgba(0,122,255,.35);outline-offset:3px}
+/* iOS grouped-card treatment for secondary settings pages */
+.display-settings-content,.filter-content{padding:16px!important;background:var(--sv-ios-bg)!important}
+.display-setting-card,.cache-info,.lang-card{border-radius:14px!important;box-shadow:0 1px 2px rgba(0,0,0,.035)!important}
+.display-setting-card{background:#fff!important;border:1px solid rgba(60,60,67,.08)!important;padding:16px!important;color:var(--sv-ios-text)!important}
+.display-setting-title,.cache-info h4{color:var(--sv-ios-text)!important;font-weight:650!important}
+.display-option,.filter-chip{border-radius:10px!important;min-height:42px;background:#fff!important;color:#3a3a3c!important;border:1px solid var(--sv-ios-line)!important}
+.display-option.active,.filter-chip.active,.lang-card.selected{background:#e5f1ff!important;border-color:#9dcaff!important;color:var(--sv-ios-blue)!important}
+.display-save{padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))!important;background:rgba(242,242,247,.96)!important;border-top:1px solid var(--sv-ios-line)!important;backdrop-filter:blur(14px)}
+#saveDisplaySettingsBtn,.btn-okay,.btn-confirm,.url-input-group button,.retry-btn{min-height:46px;border-radius:12px!important;background:var(--sv-ios-blue)!important;color:#fff!important;font-weight:650!important;box-shadow:none!important}
+#dataUsagePage input,#contentLangPage input,.url-input-group input,#dataUsagePage select,#contentLangPage select{min-height:44px;border-radius:10px!important;background:#fff!important;color:var(--sv-ios-text)!important;border:1px solid var(--sv-ios-line)!important;padding:10px 12px}
+.cache-info{background:#fff!important;border-left:4px solid var(--sv-ios-blue)!important}
+.cache-info p,.display-help,.atmos-note{color:#636366!important}
+@media(min-width:700px){.settings-list{max-width:680px;width:100%;margin:0 auto;padding-top:20px!important}.settings-header{padding-left:max(18px,calc((100% - 680px)/2))!important}.display-settings-content{max-width:720px;width:100%;margin:0 auto}.filter-content{max-width:720px;width:100%;margin:0 auto}}
+@media(prefers-reduced-motion:reduce){.settings-item{transition:none!important}}
+
+</style>
 </head>
 <body>
 <div id="deviceModeBadge" aria-hidden="true"><span class="device-dot"></span><span id="deviceModeText">Detecting device&#x2026;</span></div>
@@ -1146,7 +1188,7 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
                 if (report) {
                     let added=[]; try { added=JSON.parse(localStorage.getItem('iptv_last_refresh_new_channels')||'[]'); if(!Array.isArray(added))added=[]; } catch(e){}
                     report.style.display='block';
-                    report.innerHTML = `<strong>🆕 Last refresh: ${added.length} new channel(s)</strong><div style="font-size:12px;color:#687386;margin:4px 0 8px">Older saved channels are kept even if today's playlist is smaller.</div>` + (added.length ? `<details><summary style="cursor:pointer">Show new channel names</summary><div style="max-height:180px;overflow:auto;margin-top:6px">${added.map((c,i)=>`<div style="padding:4px 0;border-bottom:1px solid #e5e7eb">${i+1}. ${escapeHtml(c.name||'Unnamed channel')}</div>`).join('')}</div></details>` : '<div style="font-size:13px">No new channels recorded yet, or the last refresh added none.</div>');
+                    report.innerHTML = `<strong>ð Last refresh: ${added.length} new channel(s)</strong><div style="font-size:12px;color:#687386;margin:4px 0 8px">Older saved channels are kept even if today's playlist is smaller.</div>` + (added.length ? `<details><summary style="cursor:pointer">Show new channel names</summary><div style="max-height:180px;overflow:auto;margin-top:6px">${added.map((c,i)=>`<div style="padding:4px 0;border-bottom:1px solid #e5e7eb">${i+1}. ${escapeHtml(c.name||'Unnamed channel')}</div>`).join('')}</div></details>` : '<div style="font-size:13px">No new channels recorded yet, or the last refresh added none.</div>');
                 }
             } else {
                 cacheInfo.style.display = 'none';
@@ -3469,9 +3511,9 @@ button:focus-visible, select:focus-visible, .channel-item:focus-visible, .chip:f
     byId('autoScanChannelsBtn')?.addEventListener('click',scanChannels);
     byId('dataUsageScanBtn')?.addEventListener('click', async ()=>{
       const status=byId('dataUsageScanStatus');
-      if(status) status.textContent='Scan starting… Channels will not be deleted.';
+      if(status) status.textContent='Scan startingâ¦ Channels will not be deleted.';
       await scanChannels();
-      if(status) status.textContent=(byId('svAutoTuneStatus')?.textContent||'Scan finished')+' · No channels were removed.';
+      if(status) status.textContent=(byId('svAutoTuneStatus')?.textContent||'Scan finished')+' Â· No channels were removed.';
     });
     loadTuneStatus();
     byId('externalPlayerBtn')?.addEventListener('click',externalPlayer);
@@ -4288,7 +4330,7 @@ function folderTargets(){
 function renderCh(){
  const list=CH();
  const sel=list.find(c=>kOf(c)===selKey);
- body().innerHTML=(categoryView?'<div class="dm-card"><div class="dm-row"><b style="flex:1">📂 Category: '+esc(categoryView)+'</b><button class="g sm" id="dmClearCatView">All Categories</button></div><small>Is category ke channels neeche hain. Kisi channel par click karke uski details edit karein.</small></div>':'')+'<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
+ body().innerHTML=(categoryView?'<div class="dm-card"><div class="dm-row"><b style="flex:1">ð Category: '+esc(categoryView)+'</b><button class="g sm" id="dmClearCatView">All Categories</button></div><small>Is category ke channels neeche hain. Kisi channel par click karke uski details edit karein.</small></div>':'')+'<div class="dm-ed"><div class="dm-prev"><video id="dmVid" muted playsinline></video><span id="dmPst">Channel chuno</span></div><div class="dm-form">'
  +'<b id="dmName">'+(sel?esc(sel.name):'\u2014 channel list se chuno \u2014')+'</b>'
  +'<label>Category<select id="dmCat">'+opts(allCats(),sel?chCat(sel):'')+'</select></label>'
  +'<label>Channel Language (Hindi / Marathi / Telugu etc.)<select id="dmLang">'+opts(allLangs(),sel?chLang(sel):'')+'</select></label>'
@@ -4341,9 +4383,9 @@ function renderLists(kind){
  const isC=kind==='cat',names=isC?allCats():allLangs(),hid=isC?cfg.hideCats:cfg.hideLangs,cust=isC?cfg.cats:cfg.langs;
  const cnt={};CH().forEach(c=>{const v=low(isC?chCat(c):chLang(c));cnt[v]=(cnt[v]||0)+1});
  const selectedHidden=cfg.hiddenLangs||[];
- body().innerHTML=(isC?'':'<div class="dm-card"><b>Language visibility — Dashboard</b><small>Har language ka naam aur uske channels ki count neeche hai. Agar language galat ho, Channels tab mein channel select karke Language dropdown se Hindi / Marathi / Telugu set karein aur Save karein. Jis language ko hide karenge, uske channels main Dashboard par nahi dikhenge; data delete nahi hoga.</small><div class="dm-row"><label class="dm-chk"><input type="checkbox" id="dmLangSelectAll"> Select all languages</label><button class="g sm" id="dmHideSelectedLangs">Hide selected</button><button class="g sm" id="dmShowSelectedLangs">Show selected</button><button class="g sm" id="dmShowAllLangs">Show all languages</button></div></div>')
+ body().innerHTML=(isC?'':'<div class="dm-card"><b>Language visibility â Dashboard</b><small>Har language ka naam aur uske channels ki count neeche hai. Agar language galat ho, Channels tab mein channel select karke Language dropdown se Hindi / Marathi / Telugu set karein aur Save karein. Jis language ko hide karenge, uske channels main Dashboard par nahi dikhenge; data delete nahi hoga.</small><div class="dm-row"><label class="dm-chk"><input type="checkbox" id="dmLangSelectAll"> Select all languages</label><button class="g sm" id="dmHideSelectedLangs">Hide selected</button><button class="g sm" id="dmShowSelectedLangs">Show selected</button><button class="g sm" id="dmShowAllLangs">Show all languages</button></div></div>')
  +'<div class="dm-card"><div class="dm-row"><input id="dmNew" placeholder="Naya '+(isC?'category':'language')+' naam" style="flex:1"><button id="dmAdd">+ Add</button></div></div>'
- +(!isC?'<input id="dmLangSearch" placeholder="Search language: Hindi, Marathi, Telugu..." style="margin-bottom:8px">':'')+names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n)),hiddenLang=!isC&&selectedHidden.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+((h||hiddenLang)?';opacity:.65':'')+'">'+(!isC?'<input type="checkbox" class="dmLangPick" data-lang-index="'+i+'" style="width:auto" aria-label="Select '+esc(n)+'">':'')+'<b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' channels'+(hiddenLang?' · 🚫 Dashboard hidden':'')+'</small>'+(isC?'<button class="g sm" data-open-cat="'+i+'">Open / Edit Channels</button>':'<button class="g sm" data-lang-visibility="'+i+'">'+(hiddenLang?'Show channels':'Hide channels')+'</button>')+'<button class="g sm" data-ren="'+i+'">✏️ Rename</button><button class="g sm" data-hid="'+i+'">'+(h?'Show filter':'Hide filter')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">🗑</button>':'')+'</div>'}).join('');
+ +(!isC?'<input id="dmLangSearch" placeholder="Search language: Hindi, Marathi, Telugu..." style="margin-bottom:8px">':'')+names.map((n,i)=>{const h=hid.some(x=>low(x)===low(n)),hiddenLang=!isC&&selectedHidden.some(x=>low(x)===low(n));return '<div class="dm-item" style="cursor:default'+((h||hiddenLang)?';opacity:.65':'')+'">'+(!isC?'<input type="checkbox" class="dmLangPick" data-lang-index="'+i+'" style="width:auto" aria-label="Select '+esc(n)+'">':'')+'<b>'+esc(n)+'</b><small>'+(cnt[low(n)]||0)+' channels'+(hiddenLang?' Â· ð« Dashboard hidden':'')+'</small>'+(isC?'<button class="g sm" data-open-cat="'+i+'">Open / Edit Channels</button>':'<button class="g sm" data-lang-visibility="'+i+'">'+(hiddenLang?'Show channels':'Hide channels')+'</button>')+'<button class="g sm" data-ren="'+i+'">âï¸ Rename</button><button class="g sm" data-hid="'+i+'">'+(h?'Show filter':'Hide filter')+'</button>'+(cust.some(x=>low(x)===low(n))&&!cnt[low(n)]?'<button class="g sm" data-del="'+i+'">ð</button>':'')+'</div>'}).join('');
  body().dataset.names=JSON.stringify(names);
 }
 function listAction(kind,e){
@@ -4382,7 +4424,7 @@ function renderNavEd(){
  +cfg.tabs.map((t,i)=>'<div class="dm-card" data-t="'+i+'"><div class="dm-row"><input data-f="icon" value="'+esc(t.icon)+'" style="width:84px"><input data-f="label" value="'+esc(t.label)+'" style="flex:1"></div>'
  +'<select data-f="mode">'+['all','free','premium','manual'].map(m=>'<option value="'+m+'"'+(t.mode===m?' selected':'')+'>'+cap(m)+'</option>').join('')+'</select>'
  +'<input data-f="match" placeholder="Keywords (zee, sony) \u2014 is tab mein auto aayenge" value="'+esc(t.match)+'">'
- +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:80px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="fup" title="Move folder up">↑</button><button class="g sm" data-act="fdown" title="Move folder down">↓</button><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<small>Folder order: ↑ / ↓ se first se last position tak move karein.</small><button class="g sm" data-act="addf">+ Folder</button></div>'
+ +'<div class="dm-sub">'+t.folders.map((f,j)=>'<div class="dm-row" data-fo="'+j+'"><input data-g="icon" value="'+esc(f.icon||'')+'" placeholder="\ud83c\udfac / logo URL" style="width:80px"><input data-g="name" value="'+esc(f.name)+'" placeholder="Folder naam" style="flex:1;min-width:90px"><input data-g="match" value="'+esc(f.match||'')+'" placeholder="keywords" style="flex:1;min-width:90px"><button class="g sm" data-act="fup" title="Move folder up">â</button><button class="g sm" data-act="fdown" title="Move folder down">â</button><button class="g sm" data-act="delf">\ud83d\uddd1</button></div>').join('')+'<small>Folder order: â / â se first se last position tak move karein.</small><button class="g sm" data-act="addf">+ Folder</button></div>'
  +'<div class="dm-row"><button class="g sm" data-act="up">\u2191</button><button class="g sm" data-act="down">\u2193</button><button class="g sm" data-act="delt">\ud83d\uddd1 Tab hatao</button></div></div>').join('')
  +'<div class="dm-row"><button id="dmAddTab">+ Naya Tab</button><button id="dmDefTabs" class="g">Default tabs wapas</button></div>';
 }
@@ -4647,7 +4689,7 @@ window.svDash={refresh:applyAll,open};
  if(!list || $('svLowNetworkRow')) return;
  const row=document.createElement('div');
  row.className='settings-item';row.id='svLowNetworkRow';row.tabIndex=0;row.setAttribute('role','group');
- row.innerHTML='<div class="settings-item-left sv-low-copy"><strong>📶 Low Network Mode — All Channels</strong><span class="sv-low-sub">Uses lower HLS quality where available, smaller buffers and extra retries. Works best with multi-quality HLS playlists.</span></div><div class="sv-low-switch"><input id="svLowNetworkToggle" type="checkbox" aria-label="Low Network Mode"><span class="sv-low-slider"></span></div>';
+ row.innerHTML='<div class="settings-item-left sv-low-copy"><strong>ð¶ Low Network Mode â All Channels</strong><span class="sv-low-sub">Uses lower HLS quality where available, smaller buffers and extra retries. Works best with multi-quality HLS playlists.</span></div><div class="sv-low-switch"><input id="svLowNetworkToggle" type="checkbox" aria-label="Low Network Mode"><span class="sv-low-slider"></span></div>';
  list.insertBefore(row,list.children[2]||null);
  const input=$('svLowNetworkToggle');input.checked=read();
  function setMode(v){input.checked=!!v;const ok=write(v);if(!ok){input.checked=!v;alert('Could not save this setting. Browser storage may be disabled.');return}
@@ -4662,5 +4704,96 @@ window.svDash={refresh:applyAll,open};
 })();
 </script>
 
+
+<!-- ===== Responsive Design Cheat Sheet Integration: SanTV ===== -->
+<style id="sv-responsive-design-system">
+  /* Mobile-first foundations: fluid sizing, flexible media and safe-area support */
+  :root {
+    --sv-space: clamp(8px, 1.4vw, 24px);
+    --sv-content-max: 1536px;
+    --sv-body-size: clamp(14px, 0.9vw + 10px, 18px);
+    --sv-title-size: clamp(18px, 1.15vw + 12px, 28px);
+    --sv-card-radius: clamp(10px, 1vw, 16px);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  img, picture, canvas, svg { max-width: 100%; }
+  video, iframe { max-width: 100%; }
+  .app-main, .player-col, .browser-col, .browser-top,
+  .channel-list, .channel-item, .program-info, .program-details { min-width: 0; }
+  .app-title { font-size: clamp(18px, 1.25vw + 12px, 26px) !important; }
+  .program-details h4, .program-info h4 { font-size: clamp(13px, .35vw + 11px, 17px); }
+  .program-details p, .program-info p { font-size: clamp(11px, .2vw + 10px, 14px); }
+  .tv-img-wrap, .program-thumb { aspect-ratio: 16 / 9; }
+  .tv-img-wrap img, .program-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  button, input, select, textarea { max-width: 100%; }
+  .channel-item, .chip, .nav-item, .settings-item, .filter-chip {
+    touch-action: manipulation;
+  }
+
+  /* sm: 640px and up â compact phones in landscape / larger phones */
+  @media (min-width: 640px) {
+    .chips-container { gap: 10px !important; padding-left: clamp(14px, 2vw, 28px) !important; padding-right: clamp(14px, 2vw, 28px) !important; }
+    .channel-list { padding-left: clamp(14px, 2vw, 28px) !important; padding-right: clamp(14px, 2vw, 28px) !important; }
+    .tv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .language-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* md: 768px and up â tablet */
+  @media (min-width: 768px) {
+    :root { --sv-pad: clamp(18px, 2.4vw, 32px); }
+    .tv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 1.5vw, 20px); }
+    .channel-item { gap: clamp(12px, 1.4vw, 20px) !important; }
+    .channel-logo-box { flex-shrink: 0; }
+    .settings-page, .filter-page, .display-settings-page { width: 100%; max-width: none; }
+    #search-page { width: 100%; max-width: 760px; }
+    .display-settings-content, .filter-content { padding-left: clamp(20px, 3vw, 40px); padding-right: clamp(20px, 3vw, 40px); }
+  }
+
+  /* lg: 1024px and up â laptop / landscape tablet */
+  @media (min-width: 1024px) {
+    .tv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .carousel-container { width: min(100%, calc(52dvh * 16 / 9)); }
+    .channel-list { gap: 12px !important; }
+    .channel-item { border-radius: var(--sv-card-radius); }
+    .search-content { padding-left: clamp(20px, 2.5vw, 36px); padding-right: clamp(20px, 2.5vw, 36px); }
+  }
+
+  /* xl: 1280px and up â desktop */
+  @media (min-width: 1280px) {
+    .tv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+    .app-header { padding-left: clamp(24px, 2.4vw, 42px) !important; padding-right: clamp(24px, 2.4vw, 42px) !important; }
+    .channel-list { padding-left: clamp(20px, 2.2vw, 36px) !important; padding-right: clamp(20px, 2.2vw, 36px) !important; }
+  }
+
+  /* 2xl: 1536px and up â wide displays */
+  @media (min-width: 1536px) {
+    .app-header, .chips-container, .channel-list { max-width: var(--sv-content-max); margin-left: auto; margin-right: auto; }
+    .tv-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  }
+
+  /* TV / remote navigation: readable controls and visible keyboard focus */
+  @media (min-width: 900px) and (hover: none) and (pointer: coarse) {
+    button, .chip, .filter-chip, .nav-item, .settings-item { min-height: 44px; }
+    .channel-item { padding: clamp(10px, 1vw, 16px) !important; }
+    .channel-item:focus-visible, button:focus-visible, .chip:focus-visible,
+    .settings-item:focus-visible, .filter-chip:focus-visible {
+      outline: 3px solid #2864f0 !important;
+      outline-offset: 3px;
+    }
+  }
+
+  /* Reduced motion and narrow-screen overflow protection */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+  @media (max-width: 360px) {
+    .app-header { padding-left: 9px !important; padding-right: 9px !important; }
+    .header-left { gap: 7px; }
+    .app-title { font-size: 17px !important; }
+    .chips-container { padding-left: 8px !important; padding-right: 8px !important; }
+    .channel-list { padding-left: 8px !important; padding-right: 8px !important; }
+    .channel-item { gap: 7px !important; }
+  }
+</style>
+
 </body>
-</html>
